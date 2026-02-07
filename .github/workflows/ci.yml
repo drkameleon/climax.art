@@ -1,0 +1,57 @@
+name: "Build & Test"
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  pull_request:
+    paths-ignore:
+      - 'docs/*'
+      - '*.yml'
+      - '*.md'
+      - 'LICENSE'
+
+jobs:  
+  build:
+    runs-on: ${{ 
+        (matrix.os == 'linux')   && 'ubuntu-latest' ||
+        (matrix.os == 'macos')   && 'macos-latest' ||
+        (matrix.os == 'windows') && 'windows-latest' || 
+                                    'ubuntu-latest'  }}
+                                                            
+    strategy:
+        matrix:
+            include: 
+                - {os: linux}
+                - {os: freebsd}
+                - {os: macos}
+                - {os: windows}
+
+    defaults:
+        run:
+            shell: ${{ 
+                (matrix.os == 'freebsd') && 'freebsd {0}' ||
+                (matrix.os == 'windows') && 'msys2 {0}'   || 
+                                            'bash'        }}
+
+    steps:
+      - name: "Cancel similar actions in progress"
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: "Setup Arturo"
+        uses: arturo-lang/setup-arturo@main
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            os: ${{ matrix.os }}
+
+      - name: "Checkout"
+        uses: actions/checkout@main
+        with:
+            submodules: recursive
+
+      - name: Run unit tests
+        run: |
+          arturo -v
