@@ -1,0 +1,313 @@
+import {unitt}!
+import ./"../src/parser.art"!
+
+commands: ["serve" "greet" "init"]
+
+suite "parseArgs" [
+
+    test "no arguments" [
+        assert -> (parseArgs.using: "" commands) = #[
+            globals:    #[]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "subcommand only" [
+        assert -> (parseArgs.using: "serve" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[]
+            params:     []
+            rest:       []
+        ]
+
+        assert -> (parseArgs.using: "init" commands) = #[
+            globals:    #[]
+            command:    "init"
+            options:    #[]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "global flags only" [
+        assert -> (parseArgs.using: "--verbose --debug" commands) = #[
+            globals:    #[verbose: true debug: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "global flags + subcommand + command flags + positional" [
+        assert -> (parseArgs.using: "--verbose serve --port:8080 --host=localhost app.conf" commands) = #[
+            globals:    #[verbose: true]
+            command:    "serve"
+            options:    #[port: 8080 host: "localhost"]
+            params:     ["app.conf"]
+            rest:       []
+        ]
+    ]
+
+    test "boolean + valued flags mixed" [
+        assert -> (parseArgs.using: "--verbose --config:myfile.toml serve --dry-run --port:3000" commands) = #[
+            globals:    #[verbose: true config: "myfile.toml"]
+            command:    "serve"
+            options:    #["dry-run": true port: 3000]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "subcommand with flags and positionals" [
+        assert -> (parseArgs.using: "greet John Doe" commands) = #[
+            globals:    #[]
+            command:    "greet"
+            options:    #[]
+            params:     ["John" "Doe"]
+            rest:       []
+        ]
+
+        assert -> (parseArgs.using: "init --bare myproject" commands) = #[
+            globals:    #[]
+            command:    "init"
+            options:    #[bare: true]
+            params:     ["myproject"]
+            rest:       []
+        ]
+    ]
+
+    test "short flags" [
+        assert -> (parseArgs.using: "-v serve -p:8080 -h=localhost" commands) = #[
+            globals:    #[v: true]
+            command:    "serve"
+            options:    #[p: 8080 h: "localhost"]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "-- separator with raw args" [
+        assert -> (parseArgs.using: "serve --port:8080 app.conf -- --raw-thing -x foo" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080]
+            params:     ["app.conf"]
+            rest:       ["--raw-thing" "-x" "foo"]
+        ]
+    ]
+
+    test "multiple -- in rest" [
+        assert -> (parseArgs.using: "serve -- --foo -- --bar" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[]
+            params:     []
+            rest:       ["--foo" "--" "--bar"]
+        ]
+    ]
+
+    test "-- with nothing after" [
+        assert -> (parseArgs.using: "serve --port:8080 --" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "only rest args" [
+        assert -> (parseArgs.using: "-- --foo --bar baz" commands) = #[
+            globals:    #[]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       ["--foo" "--bar" "baz"]
+        ]
+    ]
+
+    test "global + subcommand + positional + rest" [
+        assert -> (parseArgs.using: "--verbose init myproject -- --template=basic" commands) = #[
+            globals:    #[verbose: true]
+            command:    "init"
+            options:    #[]
+            params:     ["myproject"]
+            rest:       ["--template=basic"]
+        ]
+    ]
+
+    test "subcommand + rest only" [
+        assert -> (parseArgs.using: "greet -- surplus" commands) = #[
+            globals:    #[]
+            command:    "greet"
+            options:    #[]
+            params:     []
+            rest:       ["surplus"]
+        ]
+    ]
+
+    test "flag right before --" [
+        assert -> (parseArgs.using: "serve --port:8080 --debug -- leftover" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080 debug: true]
+            params:     []
+            rest:       ["leftover"]
+        ]
+    ]
+
+    test "global flags + rest, no subcommand" [
+        assert -> (parseArgs.using: "--verbose -- --leftover" commands) = #[
+            globals:    #[verbose: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       ["--leftover"]
+        ]
+    ]
+
+    test "positional before subcommand" [
+        assert -> (parseArgs.using: "somefile.txt serve --port:8080" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080]
+            params:     ["somefile.txt"]
+            rest:       []
+        ]
+    ]
+
+    test "no known subcommand" [
+        assert -> (parseArgs.using: "--verbose unknown-thing file1.txt file2.txt" commands) = #[
+            globals:    #[verbose: true]
+            command:    null
+            options:    #[]
+            params:     ["unknown-thing" "file1.txt" "file2.txt"]
+            rest:       []
+        ]
+    ]
+
+    test "URL value with colons via =" [
+        assert -> (parseArgs.using: "serve --url=http://localhost:3000/api" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[url: "http://localhost:3000/api"]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "flag value via colon" [
+        assert -> (parseArgs.using: "serve --name:hello" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[name: "hello"]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "double-dash value" [
+        assert -> (parseArgs.using: "serve --name=--weird" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[name: "--weird"]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "special chars in value" [
+        assert -> (parseArgs.using: "serve --regex:^[a-z]+d{3}$" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[regex: "^[a-z]+d{3}$"]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "empty flag values" [
+        assert -> (parseArgs.using: "serve --name: --port=" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[name: "" port: ""]
+            params:     []
+            rest:       []
+        ]
+
+        assert -> (parseArgs.using: "serve --name= file.txt" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[name: ""]
+            params:     ["file.txt"]
+            rest:       []
+        ]
+    ]
+
+    test "interspersed flags and positionals" [
+        assert -> (parseArgs.using: "serve --port:8080 file1.txt --debug file2.txt file3.txt" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080 debug: true]
+            params:     ["file1.txt" "file2.txt" "file3.txt"]
+            rest:       []
+        ]
+    ]
+
+    test "repeated flag (last wins)" [
+        assert -> (parseArgs.using: "serve --port:8080 --port:9090" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 9090]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "lone dash as stdin" [
+        assert -> (parseArgs.using: "serve - input.txt" commands) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[]
+            params:     ["-" "input.txt"]
+            rest:       []
+        ]
+    ]
+
+    test "negative numbers parsed as flags" [
+        assert -> (parseArgs.using: "greet --times:3 -42" commands) = #[
+            globals:    #[]
+            command:    "greet"
+            options:    #[times: 3 "42": true]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "numeric flag name" [
+        assert -> (parseArgs.using: "--123:hello serve" commands) = #[
+            globals:    #["123": "hello"]
+            command:    "serve"
+            options:    #[]
+            params:     []
+            rest:       []
+        ]
+    ]
+
+    test "all sections heavily populated" [
+        assert -> (parseArgs.using: "--verbose --debug --config:app.toml serve --port:8080 --host:0.0.0.0 --workers:4 --ssl app.conf keys.pem -- --extra1 --extra2 val" commands) = #[
+            globals:    #[verbose: true debug: true config: "app.toml"]
+            command:    "serve"
+            options:    #[port: 8080 host: "0.0.0.0" workers: 4 ssl: true]
+            params:     ["app.conf" "keys.pem"]
+            rest:       ["--extra1" "--extra2" "val"]
+        ]
+    ]
+]
+
+unitt\report 'full
