@@ -7,7 +7,7 @@ parseArgs: function [knownCommands :block][
         rest:    []
     ]
 
-    tokens: arg
+    tokens: (attr'using) ?? arg
     i: 0
     foundCommand?: false
 
