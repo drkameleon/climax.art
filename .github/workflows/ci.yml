@@ -54,5 +54,6 @@ jobs:
 
       - name: Run unit tests
         run: |
+          cd $GITHUB_WORKSPACE
           arturo -v
           arturo test/parser.test.art
