@@ -349,13 +349,9 @@ climax: function [decls :block][
     ; parse argv
     parsed: parseArgs keys commands
 
-    helpGlobal?: false
-    if in? "help" keys parsed\globals [ helpGlobal?: true ]
-    if in? "h"    keys parsed\globals [ helpGlobal?: true ]
-
-    versionGlobal?: false
-    if in? "version" keys parsed\globals [ versionGlobal?: true ]
-    if in? "V"       keys parsed\globals [ versionGlobal?: true ]
+    gks: keys parsed\globals
+    helpGlobal?:    or? [in? "help"    gks][in? "h" gks]
+    versionGlobal?: or? [in? "version" gks][in? "V" gks]
 
     if versionGlobal? [
         print (script\version ?? "?")
@@ -382,9 +378,8 @@ climax: function [decls :block][
 
     cmd: commands\[cmdName]
 
-    cmdHelp?: false
-    if in? "help" keys parsed\options [ cmdHelp?: true ]
-    if in? "h"    keys parsed\options [ cmdHelp?: true ]
+    oks: keys parsed\options
+    cmdHelp?: or? [in? "help" oks][in? "h" oks]
 
     if cmdHelp? [
         renderCommandHelp cmdName cmd globalSpec
