@@ -62,6 +62,21 @@ define :cli [
         \parse tokens knownCommands
     ]
 
+    help?: method [][
+        ks: keys \globals
+        or? [in? "help" ks][in? "h" ks]
+    ]
+
+    version?: method [][
+        ks: keys \globals
+        or? [in? "version" ks][in? "V" ks]
+    ]
+
+    helpFor?: method [][
+        ks: keys \options
+        or? [in? "help" ks][in? "h" ks]
+    ]
+
     parseFlag: method [token :string][
         clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
 
@@ -360,16 +375,12 @@ climaxModule: module [
 
         parsed: to :cli @[keys commands]!
 
-        gks: keys parsed\globals
-        helpGlobal?:    or? [in? "help"    gks][in? "h" gks]
-        versionGlobal?: or? [in? "version" gks][in? "V" gks]
-
-        if versionGlobal? [
+        if parsed\version? [
             print (script\version ?? "?")
             return ø
         ]
 
-        if and? [helpGlobal?][null? parsed\command] [
+        if and? [parsed\help?][null? parsed\command] [
             \renderHelp globalSpec commands
             return ø
         ]
@@ -387,10 +398,7 @@ climaxModule: module [
         ]
 
         cmd: commands\[cmdName]
-        oks: keys parsed\options
-        cmdHelp?: or? [in? "help" oks][in? "h" oks]
-
-        if cmdHelp? [
+        if parsed\helpFor? [
             \renderCommandHelp cmdName cmd globalSpec
             return ø
         ]
