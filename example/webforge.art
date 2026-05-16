@@ -82,7 +82,7 @@ climax .with: [
         ; means it's optional. Default to "." in the body.
         root: path ?? "."
 
-        if opts\verbose [
+        if opts\["verbose?"] [
             print ~"[verbose] starting build in |root|"
         ]
         print ~"BUILD → compiling |root|/src into |root|/build"
@@ -103,11 +103,11 @@ climax .with: [
     ][
         root: path ?? "."
 
-        if opts\verbose [
+        if opts\["verbose?"] [
             print ~"[verbose] preparing server for |root|"
         ]
         print ~"SERVE → http://|opts\host|:|opts\port|  (root: |root|)"
-        if opts\watch [
+        if opts\["watch?"] [
             print "       watching source for changes..."
         ]
     ]
@@ -122,10 +122,10 @@ climax .with: [
         clean?  "wipe remote before syncing (DANGEROUS)"
     ][
         root: path ?? "."
-        if opts\clean [
+        if opts\["clean?"] [
             print ~"DEPLOY → CLEAN sync of |root| to |target|"
         ]
-        if not? opts\clean [
+        if not? opts\["clean?"] [
             print ~"DEPLOY → incremental sync of |root| to |target|"
         ]
     ]
