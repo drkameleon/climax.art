@@ -26,9 +26,9 @@ suite "command" [
             print "serving"
         ]
         ks: keys cmd\opts
-        assert -> in? "watch" ks
-        assert -> in? "port"  ks
-        assert -> cmd\opts\watch\pred? = true
+        assert -> in? "watch?" ks
+        assert -> in? "port"   ks
+        assert -> cmd\opts\["watch?"]\pred? = true
         assert -> cmd\opts\port\pred? = false
         assert -> cmd\opts\port\default = 8080
         assert -> cmd\opts\port\alias = "p"
@@ -43,18 +43,20 @@ suite "parseOptionSpec" [
 
     test "bare predicate" [
         s: parseOptionSpec [verbose?]
-        assert -> s\verbose\pred? = true
-        assert -> s\verbose\types = @[:logical]
-        assert -> s\verbose\alias = null
-        assert -> s\verbose\default = null
-        assert -> s\verbose\info = ""
+        v: s\["verbose?"]
+        assert -> v\pred? = true
+        assert -> v\types = @[:logical]
+        assert -> v\alias = null
+        assert -> v\default = null
+        assert -> v\info = ""
     ]
 
     test "predicate with alias and description" [
         s: parseOptionSpec [quiet? 'q "suppress output"]
-        assert -> s\quiet\pred? = true
-        assert -> s\quiet\alias = "q"
-        assert -> s\quiet\info = "suppress output"
+        v: s\["quiet?"]
+        assert -> v\pred? = true
+        assert -> v\alias = "q"
+        assert -> v\info = "suppress output"
     ]
 
     test "typed option, integer default" [
@@ -95,9 +97,9 @@ suite "parseOptionSpec" [
         ks: keys s
         n: size ks
         assert -> n = 3
-        assert -> in? "verbose" ks
-        assert -> in? "quiet"   ks
-        assert -> in? "port"    ks
+        assert -> in? "verbose?" ks
+        assert -> in? "quiet?"   ks
+        assert -> in? "port"     ks
     ]
 
     test "empty block" [
@@ -190,9 +192,9 @@ suite "buildOpts" [
         ]
 
         merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\verbose = true
-        assert -> merged\v       = true
-        assert -> merged\port    = 9000
+        assert -> merged\["verbose?"] = true
+        assert -> merged\v          = true
+        assert -> merged\port       = 9000
     ]
 
     test "missing CLI values fall back to spec defaults" [
@@ -208,9 +210,9 @@ suite "buildOpts" [
         ]
 
         merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\verbose = false
-        assert -> merged\port    = 8080
-        assert -> merged\host    = "localhost"
+        assert -> merged\["verbose?"] = false
+        assert -> merged\port       = 8080
+        assert -> merged\host       = "localhost"
     ]
 
     test "alias key lookup hits underlying option" [
