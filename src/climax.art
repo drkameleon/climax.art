@@ -29,7 +29,12 @@ define :option [
 ]
 
 define :command [
-    init: constructor [info :string  args :block  opts :dictionary  body :block]
+    init: constructor [
+        info :string  
+        args :block  
+        opts :dictionary  
+        body :block
+    ]
 ]
 
 ;---------------------------
