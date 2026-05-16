@@ -57,3 +57,4 @@ jobs:
           cd $GITHUB_WORKSPACE
           arturo -v
           arturo tests/parser.test.art
+          arturo tests/climax.test.art
