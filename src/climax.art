@@ -42,7 +42,7 @@ climaxModule: module [
         ;   <name>[?]  ['alias]  [<default>]  [:type ...]  ["description"]
         specs:   #[]
         items:   new block
-        cur:     null
+        cur:     ø
         sawType: false
 
         loop items 'tok [
@@ -89,7 +89,7 @@ climaxModule: module [
         ]
         loop types 't [
             if t = :string -> return val
-            converted: null
+            converted: ø
             try [ converted: to t val ]
             if not? null? converted -> return converted
         ]
@@ -119,11 +119,11 @@ climaxModule: module [
         if not? null? provided     -> return \coerceValue provided spec\types
         if not? null? spec\default -> return spec\default
         if spec\pred?              -> return false
-        return null
+        return ø
     ]
 
     lookup: method [dict :dictionary  key :string][
-        (in? key keys dict)? -> dict\[key] -> null
+        (in? key keys dict)? -> dict\[key] -> ø
     ]
 
     buildOpts: method [cmdOpts :dictionary  globalSpec :dictionary  parsed :dictionary][
@@ -153,7 +153,7 @@ climaxModule: module [
         wrapperVals: @[opts rest]
 
         loop.with:'i names 'argName [
-            val: (i < size params)? -> params\[i] -> null
+            val: (i < size params)? -> params\[i] -> ø
             if not? null? val [
                 ts: \argTypes cmd\args argName
                 val: \coerceValue val ts
@@ -240,7 +240,7 @@ climaxModule: module [
         ctx: dictionary decls
         loop ctx [name val][
             if dictionary? val ->
-                if (val\kind ?? null) = 'command -> ret\[name]: val
+                if (val\kind ?? ø) = 'command -> ret\[name]: val
         ]
         return ret
     ]
@@ -283,24 +283,24 @@ climaxModule: module [
 
         if versionGlobal? [
             print (script\version ?? "?")
-            return null
+            return ø
         ]
 
         if and? [helpGlobal?][null? parsed\command] [
             \renderHelp globalSpec commands
-            return null
+            return ø
         ]
 
         cmdName: parsed\command
         if null? cmdName [
             \renderHelp globalSpec commands
-            return null
+            return ø
         ]
 
         if not? in? cmdName keys commands [
             print ~"climax: unknown command `|cmdName|`"
             \renderHelp globalSpec commands
-            return null
+            return ø
         ]
 
         cmd: commands\[cmdName]
@@ -309,7 +309,7 @@ climaxModule: module [
 
         if cmdHelp? [
             \renderCommandHelp cmdName cmd globalSpec
-            return null
+            return ø
         ]
 
         \dispatchCommand cmd parsed globalSpec
