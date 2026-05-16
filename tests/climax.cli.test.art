@@ -1,0 +1,108 @@
+;===============================================
+; End-to-end CLI tests
+;
+; Runs `tests/fixtures/app.art` as a real Arturo
+; subprocess and asserts on its stdout. This is what
+; you want if you actually want to know whether Climax
+; broke from a user's perspective.
+;===============================================
+
+import {unitt}!
+
+;---------------------------
+; Helpers
+;---------------------------
+
+artBin: sys\binary
+fixture: relative "./fixtures/app.art"
+
+runApp: function [argLine :string][
+    cmd: ~{|artBin| "|fixture|" |argLine|}
+    return strip execute cmd
+]
+
+;---------------------------
+; Tests
+;---------------------------
+
+suite "climax CLI" [
+
+    test "--version prints script version" [
+        out: runApp "--version"
+        assert -> out = "0.0.1"
+    ]
+
+    test "no args prints help (contains COMMANDS section)" [
+        out: runApp ""
+        assert -> contains? out "COMMANDS"
+        assert -> contains? out "hello"
+        assert -> contains? out "add"
+        assert -> contains? out "show"
+        assert -> contains? out "rests"
+    ]
+
+    test "--help renders the global help screen" [
+        out: runApp "--help"
+        assert -> contains? out "GLOBAL OPTIONS"
+        assert -> contains? out "--verbose"
+    ]
+
+    test "<cmd> --help renders per-command help" [
+        out: runApp "show --help"
+        assert -> contains? out "show"
+        assert -> contains? out "--port"
+        assert -> contains? out "--flag"
+        assert -> contains? out "default: 8080"
+    ]
+
+    test "default positional fallback works" [
+        out: runApp "hello"
+        assert -> out = "hello world"
+    ]
+
+    test "positional arg is passed through" [
+        out: runApp "hello alice"
+        assert -> out = "hello alice"
+    ]
+
+    test "global flag visible inside command body" [
+        out: runApp "-v hello"
+        assert -> contains? out "[verbose] hello path"
+        assert -> contains? out "hello world"
+    ]
+
+    test "typed positionals get coerced" [
+        out: runApp "add 3 4"
+        assert -> out = "7"
+    ]
+
+    test "options defaults appear when none provided" [
+        out: runApp "show"
+        assert -> out = "verbose=false port=8080 flag=false"
+    ]
+
+    test "CLI options override defaults; alias works" [
+        out: runApp "show -p:9000 --flag"
+        assert -> out = "verbose=false port=9000 flag=true"
+    ]
+
+    test "global flag merges into command opts" [
+        out: runApp "-v show"
+        assert -> out = "verbose=true port=8080 flag=false"
+    ]
+
+    test "rest args after -- captured" [
+        out: runApp "rests x -- a b c"
+        ls: split.lines out
+        assert -> ls\0 = "head=x"
+        assert -> contains? ls\1 "[a b c]"
+    ]
+
+    test "unknown command falls back to help" [
+        out: runApp "totally-unknown"
+        assert -> contains? out "USAGE"
+        assert -> contains? out "COMMANDS"
+    ]
+]
+
+unitt\report 'full
