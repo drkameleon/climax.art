@@ -97,9 +97,9 @@ climax .with: [
     serve: command "Build + local server" [
         path :string :null
     ] .with: [
-        watch?                       "rebuild on source changes"
-        port  'p  8080  :integer     "port number"
-        host       "localhost" :string "bind host"
+        watch?                           "rebuild on source changes"
+        port  'p  8080         :integer  "port number"
+        host      "localhost"  :string   "bind host"
     ][
         root: path ?? "."
 
