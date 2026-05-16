@@ -28,30 +28,20 @@ define :option [
 
 define :command [
     init: constructor [
-        info :string  
-        args :block  
-        opts :dictionary  
+        info :string
+        args :block
+        opts :dictionary
         body :block
     ]
 ]
 
-;---------------------------
-; The main module
-;---------------------------
-
-climaxModule: module [
-    ;---------------------------
-    ; Private helpers
-    ;---------------------------
-
-    parseArgs: method.public [knownCommands :block][
-        result: #[
-            globals: #[]
-            command: ø
-            options: #[]
-            params:  []
-            rest:    []
-        ]
+define :cli [
+    init: method [knownCommands :block][
+        \globals: #[]
+        \command: ø
+        \options: #[]
+        \params:  []
+        \rest:    []
 
         if string? tokens: <= (attr 'using) ?? arg ->
             tokens: split.words tokens
@@ -86,7 +76,7 @@ climaxModule: module [
                 "--" [
                     i: i + 1
                     while [i < size tokens][
-                        result\rest: append result\rest tokens\[i]
+                        \rest: append \rest tokens\[i]
                         i: i + 1
                     ]
                 ]
@@ -98,25 +88,33 @@ climaxModule: module [
                             if numeric? val -> val: to :integer val
                         ]
                         (foundCommand?)?
-                            -> result\options\[flag\name]: val
-                            -> result\globals\[flag\name]: val
+                            -> \options\[flag\name]: val
+                            -> \globals\[flag\name]: val
                     ][
                         if and? [not? foundCommand?][in? token knownCommands][
-                            result\command: token
+                            \command: token
                             foundCommand?: true
                         ]
                         if or? [foundCommand?][not? in? token knownCommands] ->
-                            if token <> result\command ->
-                                result\params: append result\params token
+                            if token <> \command ->
+                                \params: append \params token
                     ]
                 ]
             ]
 
             i: i + 1
         ]
-
-        return result
     ]
+]
+
+;---------------------------
+; The main module
+;---------------------------
+
+climaxModule: module [
+    ;---------------------------
+    ; Private helpers
+    ;---------------------------
 
     parseOptionSpec: function [block :block][
         ; forced order per row:
@@ -207,7 +205,7 @@ climaxModule: module [
         (in? key keys dict)? -> dict\[key] -> ø
     ]
 
-    buildOpts: method [cmdOpts :dictionary  globalSpec :dictionary  parsed :dictionary][
+    buildOpts: method [cmdOpts :dictionary  globalSpec :dictionary  parsed :cli][
         ret: #[]
         loop @[@[globalSpec parsed\globals] @[cmdOpts parsed\options]] 'pair [
             spec: pair\0
@@ -224,7 +222,7 @@ climaxModule: module [
         return ret
     ]
 
-    dispatchCommand: method [cmd :command  parsed :dictionary  globalSpec :dictionary][
+    dispatchCommand: method [cmd :command  parsed :cli  globalSpec :dictionary][
         opts: \buildOpts cmd\opts globalSpec parsed
         rest: parsed\rest
         names: \extractArgNames cmd\args
@@ -348,7 +346,7 @@ climaxModule: module [
         globalSpec: \parseOptionSpec withBlock
         commands: \harvestCommands decls
 
-        parsed: parseArgs keys commands
+        parsed: to :cli @[keys commands]
 
         gks: keys parsed\globals
         helpGlobal?:    or? [in? "help"    gks][in? "h" gks]
