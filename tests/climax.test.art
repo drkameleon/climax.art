@@ -11,7 +11,7 @@ suite "command" [
         cmd: command "greet someone" [name :string][
             print name
         ]
-        assert -> cmd\kind = 'command
+        assert -> is? :command cmd
         assert -> cmd\info = "greet someone"
         assert -> cmd\args = [name :string]
         assert -> cmd\opts = #[]

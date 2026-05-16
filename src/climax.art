@@ -28,6 +28,10 @@ define :option [
     ]
 ]
 
+define :command [
+    init: constructor [info :string  args :block  opts :dictionary  body :block]
+]
+
 ;---------------------------
 ; The main module
 ;---------------------------
@@ -143,7 +147,7 @@ climaxModule: module [
         return ret
     ]
 
-    dispatchCommand: method [cmd :dictionary  parsed :dictionary  globalSpec :dictionary][
+    dispatchCommand: method [cmd :command  parsed :dictionary  globalSpec :dictionary][
         opts: \buildOpts cmd\opts globalSpec parsed
         rest: parsed\rest
         names: \extractArgNames cmd\args
@@ -218,7 +222,7 @@ climaxModule: module [
         print ~"Run `|appName| <command> --help` for command-specific help."
     ]
 
-    renderCommandHelp: method [name :string  cmd :dictionary  globalSpec :dictionary][
+    renderCommandHelp: method [name :string  cmd :command  globalSpec :dictionary][
         info: script
         appName: info\name ?? "app"
 
@@ -239,8 +243,7 @@ climaxModule: module [
         ret: #[]
         ctx: dictionary decls
         loop ctx [name val][
-            if dictionary? val ->
-                if (val\kind ?? ø) = 'command -> ret\[name]: val
+            if is? :command val -> ret\[name]: val
         ]
         return ret
     ]
@@ -254,16 +257,9 @@ climaxModule: module [
         ;; options: [
         ;;     with: :block « options block (row grammar)
         ;; ]
-        ;; returns: :dictionary
-        withBlock: (attr 'with) ?? []
-        optSpec: \parseOptionSpec withBlock
-        return #[
-            kind:   'command
-            info:   desc
-            args:   args
-            opts:   optSpec
-            body:   body
-        ]
+        ;; returns: :command
+        optSpec: \parseOptionSpec ((attr 'with) ?? [])
+        return to :command @[desc args optSpec body]
     ]
 
     climax: method.public [decls :block][
