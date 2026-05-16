@@ -18,10 +18,7 @@ import ./"parser.art"!
 
 stripQ: function [name][
     s: to :string name
-    if suffix? s "?" [
-        return slice s 0 (size s) - 2
-    ]
-    return s
+    (suffix? s "?")? -> chop s -> s
 ]
 
 isPred?: function [name][
