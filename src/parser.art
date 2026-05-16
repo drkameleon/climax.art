@@ -7,9 +7,8 @@ parseArgs: function [knownCommands :block][
         rest:    []
     ]
 
-    tokens: (attr 'using) ?? arg
-    if string? tokens [ tokens: split.words tokens ]
-    tokens: new tokens
+    if string? tokens: <= (attr 'using) ?? arg ->
+        tokens: split.words tokens
 
     i: 0
     foundCommand?: false
