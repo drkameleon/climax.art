@@ -16,24 +16,19 @@ parseArgs: function [knownCommands :block][
 
     parseFlag: function [token :string][
         clean: token
-        if prefix? clean "--" [
-            clean: slice clean 2 (dec size clean)
-        ]
-        if not? prefix? token "--" [
-            clean: slice clean 1 (dec size clean)
-        ]
+        (prefix? clean "--")? -> clean: slice clean 2 (dec size clean)
+                              -> clean: slice clean 1 (dec size clean)
 
         idxColon: index clean ":"
         idxEqual: index clean "="
 
-        if and? [null? idxColon][null? idxEqual] [
+        if and? [null? idxColon][null? idxEqual] ->
             return #[name: clean value: true]
-        ]
 
         sep: null
-        if null? idxColon [ sep: idxEqual ]
-        if null? idxEqual [ sep: idxColon ]
-        if null? sep      [ sep: min @[idxColon idxEqual] ]
+        if null? idxColon -> sep: idxEqual
+        if null? idxEqual -> sep: idxColon
+        if null? sep      -> sep: min @[idxColon idxEqual]
 
         return #[
             name:  slice clean 0 (dec sep)
