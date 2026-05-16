@@ -28,7 +28,8 @@ isPred?: function [name][
 newOption: function [nameTok][
     pred?: isPred? nameTok
     return #[
-        name:    stripQ nameTok
+        name:    to :string nameTok
+        cli:     stripQ nameTok
         pred?:   pred?
         alias:   null
         default: null
@@ -156,7 +157,7 @@ buildOpts: function [cmdOpts :dictionary  globalSpec :dictionary  parsed :dictio
     ret: #[]
 
     loop globalSpec [name spec][
-        provided: lookup parsed\globals name
+        provided: lookup parsed\globals spec\cli
         if and? [null? provided][not? null? spec\alias] [
             provided: lookup parsed\globals spec\alias
         ]
@@ -168,7 +169,7 @@ buildOpts: function [cmdOpts :dictionary  globalSpec :dictionary  parsed :dictio
     ]
 
     loop cmdOpts [name spec][
-        provided: lookup parsed\options name
+        provided: lookup parsed\options spec\cli
         if and? [null? provided][not? null? spec\alias] [
             provided: lookup parsed\options spec\alias
         ]
@@ -215,7 +216,7 @@ dispatchCommand: function [cmd :dictionary  parsed :dictionary  globalSpec :dict
 ;---------------------------
 
 flagLabel: function [spec :dictionary][
-    long: (spec\pred?)? -> ~"--|spec\name|" -> ~"--|spec\name|=VALUE"
+    long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
     (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
                              -> ~"    |long|"
 ]
