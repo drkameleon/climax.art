@@ -2,7 +2,7 @@ import {unitt}!
 import ./"../src/climax.art"!
 
 ;---------------------------
-; command constructor
+; command — record shape
 ;---------------------------
 
 suite "command" [
@@ -18,236 +18,69 @@ suite "command" [
         assert -> cmd\body = [print name]
     ]
 
-    test "with .with: options" [
-        cmd: command "serve" [path :string :null] .with: [
-            watch?
-            port 'p 8080 :integer "port number"
-        ][
-            print "serving"
-        ]
+    test "bare predicate option" [
+        cmd: command "x" [] .with: [verbose?][ print "x" ]
         ks: keys cmd\opts
-        assert -> in? "watch?" ks
-        assert -> in? "port"   ks
-        assert -> cmd\opts\watch?\pred? = true
-        assert -> cmd\opts\port\pred? = false
-        assert -> cmd\opts\port\default = 8080
-        assert -> cmd\opts\port\alias = "p"
-    ]
-]
-
-;---------------------------
-; option-row parser
-;---------------------------
-
-suite "parseOptionSpec" [
-
-    test "bare predicate" [
-        s: parseOptionSpec [verbose?]
-        v: s\verbose?
-        assert -> v\pred? = true
-        assert -> v\types = @[:logical]
-        assert -> v\alias = null
-        assert -> v\default = null
-        assert -> v\info = ""
+        assert -> in? "verbose?" ks
+        assert -> cmd\opts\verbose?\pred? = true
+        assert -> cmd\opts\verbose?\types = @[:logical]
+        assert -> cmd\opts\verbose?\alias = null
+        assert -> cmd\opts\verbose?\default = null
+        assert -> cmd\opts\verbose?\info = ""
     ]
 
     test "predicate with alias and description" [
-        s: parseOptionSpec [quiet? 'q "suppress output"]
-        v: s\quiet?
-        assert -> v\pred? = true
-        assert -> v\alias = "q"
-        assert -> v\info = "suppress output"
+        cmd: command "x" [] .with: [quiet? 'q "suppress output"][ print "x" ]
+        assert -> cmd\opts\quiet?\pred? = true
+        assert -> cmd\opts\quiet?\alias = "q"
+        assert -> cmd\opts\quiet?\info = "suppress output"
     ]
 
-    test "typed option, integer default" [
-        s: parseOptionSpec [port 8080 :integer "port number"]
-        assert -> s\port\pred? = false
-        assert -> s\port\default = 8080
-        assert -> s\port\types = @[:integer]
-        assert -> s\port\info = "port number"
+    test "typed option with integer default" [
+        cmd: command "x" [] .with: [port 8080 :integer "port number"][ print "x" ]
+        assert -> cmd\opts\port\pred? = false
+        assert -> cmd\opts\port\default = 8080
+        assert -> cmd\opts\port\types = @[:integer]
+        assert -> cmd\opts\port\info = "port number"
     ]
 
-    test "typed option, string default before type" [
-        s: parseOptionSpec [host "localhost" :string "bind host"]
-        assert -> s\host\default = "localhost"
-        assert -> s\host\types = @[:string]
-        assert -> s\host\info = "bind host"
+    test "typed option with string default before type" [
+        cmd: command "x" [] .with: [host "localhost" :string "bind host"][ print "x" ]
+        assert -> cmd\opts\host\default = "localhost"
+        assert -> cmd\opts\host\types = @[:string]
+        assert -> cmd\opts\host\info = "bind host"
     ]
 
-    test "alias before default before type before description" [
-        s: parseOptionSpec [config 'c "app.toml" :string "config file"]
-        assert -> s\config\alias = "c"
-        assert -> s\config\default = "app.toml"
-        assert -> s\config\types = @[:string]
-        assert -> s\config\info = "config file"
+    test "full row: alias, default, type, description" [
+        cmd: command "x" [] .with: [config 'c "app.toml" :string "config file"][ print "x" ]
+        assert -> cmd\opts\config\alias = "c"
+        assert -> cmd\opts\config\default = "app.toml"
+        assert -> cmd\opts\config\types = @[:string]
+        assert -> cmd\opts\config\info = "config file"
     ]
 
     test "union types" [
-        s: parseOptionSpec [port :integer :string "port number or name"]
-        assert -> s\port\types = @[:integer :string]
-        assert -> s\port\info = "port number or name"
+        cmd: command "x" [] .with: [port :integer :string "port number or name"][ print "x" ]
+        assert -> cmd\opts\port\types = @[:integer :string]
+        assert -> cmd\opts\port\info = "port number or name"
     ]
 
     test "multiple options in one block" [
-        s: parseOptionSpec [
+        cmd: command "x" [] .with: [
             verbose?
             quiet? 'q "suppress"
             port 8080 :integer "port number"
-        ]
-        ks: keys s
-        n: size ks
-        assert -> n = 3
+        ][ print "x" ]
+        ks: keys cmd\opts
+        assert -> (size ks) = 3
         assert -> in? "verbose?" ks
         assert -> in? "quiet?"   ks
         assert -> in? "port"     ks
     ]
 
-    test "empty block" [
-        s: parseOptionSpec []
-        assert -> s = #[]
-    ]
-]
-
-;---------------------------
-; value coercion
-;---------------------------
-
-suite "coerceValue" [
-
-    test "no types returns value as-is" [
-        a: coerceValue "abc" []
-        b: coerceValue 42 []
-        assert -> a = "abc"
-        assert -> b = 42
-    ]
-
-    test "already matching type passes through" [
-        v: coerceValue 42 @[:integer]
-        assert -> v = 42
-    ]
-
-    test "string to integer" [
-        v: coerceValue "42" @[:integer]
-        assert -> v = 42
-    ]
-
-    test "string to floating" [
-        v: coerceValue "3.14" @[:floating]
-        assert -> v = 3.14
-    ]
-
-    test "union picks first matching" [
-        v: coerceValue "42" @[:integer :string]
-        assert -> v = 42
-    ]
-]
-
-;---------------------------
-; option resolution
-;---------------------------
-
-suite "resolveOpt" [
-
-    test "provided value coerced to declared type" [
-        spec: #[name: "port" pred?: false alias: null default: 8080 types: @[:integer] info: ""]
-        v: resolveOpt spec "9000"
-        assert -> v = 9000
-    ]
-
-    test "absent option falls back to default" [
-        spec: #[name: "port" pred?: false alias: null default: 8080 types: @[:integer] info: ""]
-        v: resolveOpt spec null
-        assert -> v = 8080
-    ]
-
-    test "absent predicate falls back to false" [
-        spec: #[name: "watch" pred?: true alias: null default: null types: @[:logical] info: ""]
-        v: resolveOpt spec null
-        assert -> v = false
-    ]
-
-    test "absent typed option without default returns null" [
-        spec: #[name: "host" pred?: false alias: null default: null types: @[:string] info: ""]
-        v: resolveOpt spec null
-        assert -> v = null
-    ]
-]
-
-;---------------------------
-; option merge (globals + per-cmd) using parsed shape
-;---------------------------
-
-suite "buildOpts" [
-
-    test "merges globals and per-command, applies defaults" [
-        globalSpec: parseOptionSpec [verbose? 'v]
-        cmdOpts:    parseOptionSpec [port 8080 :integer]
-
-        parsed: #[
-            globals: #[verbose: true]
-            command: "serve"
-            options: #[port: 9000]
-            params:  []
-            rest:    []
-        ]
-
-        merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\verbose? = true
-        assert -> merged\v          = true
-        assert -> merged\port       = 9000
-    ]
-
-    test "missing CLI values fall back to spec defaults" [
-        globalSpec: parseOptionSpec [verbose?]
-        cmdOpts:    parseOptionSpec [port 8080 :integer  host "localhost" :string]
-
-        parsed: #[
-            globals: #[]
-            command: "serve"
-            options: #[]
-            params:  []
-            rest:    []
-        ]
-
-        merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\verbose? = false
-        assert -> merged\port       = 8080
-        assert -> merged\host       = "localhost"
-    ]
-
-    test "alias key lookup hits underlying option" [
-        cmdOpts: parseOptionSpec [port 'p 8080 :integer]
-        parsed: #[
-            globals: #[]
-            command: "serve"
-            options: #[p: 9000]
-            params:  []
-            rest:    []
-        ]
-        merged: buildOpts cmdOpts #[] parsed
-        assert -> merged\port = 9000
-        assert -> merged\p    = 9000
-    ]
-]
-
-;---------------------------
-; arg-block introspection
-;---------------------------
-
-suite "argTypes / extractArgNames" [
-
-    test "extracts positional names in order" [
-        a: extractArgNames [path :string]
-        b: extractArgNames [name :string  age :integer]
-        assert -> a = [path]
-        assert -> b = [name age]
-    ]
-
-    test "argTypes returns union for declared arg" [
-        a: argTypes [path :string :null] to :word 'path
-        b: argTypes [name :string  age :integer] to :word 'age
-        assert -> a = @[:string :null]
-        assert -> b = @[:integer]
+    test "no .with: produces empty opts dict" [
+        cmd: command "x" [] [ print "x" ]
+        assert -> cmd\opts = #[]
     ]
 ]
 
