@@ -222,18 +222,9 @@ dispatchCommand: function [cmd :dictionary  parsed :dictionary  globalSpec :dict
 ;---------------------------
 
 flagLabel: function [spec :dictionary][
-    long: ""
-    if spec\pred? [
-        long: ~"--|spec\name|"
-    ]
-    if not? spec\pred? [
-        long: ~"--|spec\name|=VALUE"
-    ]
-    if not? null? spec\alias [
-        a: to :string spec\alias
-        return ~"-|a|, |long|"
-    ]
-    return ~"    |long|"
+    long: (spec\pred?)? -> ~"--|spec\name|" -> ~"--|spec\name|=VALUE"
+    (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
+                             -> ~"    |long|"
 ]
 
 renderOption: function [spec :dictionary][
