@@ -1,7 +1,7 @@
 ;===============================================
 ; End-to-end CLI tests
 ;
-; Runs `tests/fixtures/app.art` as a real Arturo
+; Runs `tests/partials/app.art` as a real Arturo
 ; subprocess and asserts on its stdout. This is what
 ; you want if you actually want to know whether Climax
 ; broke from a user's perspective.
@@ -14,7 +14,7 @@ import {unitt}!
 ;---------------------------
 
 artBin: sys\binary
-fixture: relative "./fixtures/app.art"
+fixture: relative "./partials/app.art"
 
 runApp: function [argLine :string][
     cmd: ~{|artBin| "|fixture|" |argLine|}
