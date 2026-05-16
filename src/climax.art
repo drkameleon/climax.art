@@ -107,15 +107,8 @@ coerceValue: function [val  types :block][
     return val
 ]
 
-extractArgNames: function [argBlock :block][
-    ret: []
-    loop argBlock 'tok [
-        if word? tok [
-            'ret ++ tok
-        ]
-    ]
-    return ret
-]
+extractArgNames: function [argBlock :block] ->
+    select argBlock 'tok -> word? tok
 
 argTypes: function [argBlock :block  argName :word][
     ret: []
