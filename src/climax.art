@@ -10,8 +10,6 @@
 ; @file: src/climax.art
 ;==========================================================
 
-import ./"parser.art"!
-
 ;---------------------------
 ; Types
 ;---------------------------
@@ -45,6 +43,80 @@ climaxModule: module [
     ;---------------------------
     ; Private helpers
     ;---------------------------
+
+    parseArgs: method.public [knownCommands :block][
+        result: #[
+            globals: #[]
+            command: ø
+            options: #[]
+            params:  []
+            rest:    []
+        ]
+
+        if string? tokens: <= (attr 'using) ?? arg ->
+            tokens: split.words tokens
+
+        i: 0
+        foundCommand?: false
+
+        parseFlag: function [token :string][
+            clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
+
+            idxColon: index clean ":"
+            idxEqual: index clean "="
+
+            if and? [null? idxColon][null? idxEqual] ->
+                return #[name: clean value: true]
+
+            sep: ø
+            if null? idxColon -> sep: idxEqual
+            if null? idxEqual -> sep: idxColon
+            if null? sep      -> sep: min @[idxColon idxEqual]
+
+            return #[
+                name:  slice clean 0 (dec sep)
+                value: slice clean (inc sep) (dec size clean)
+            ]
+        ]
+
+        while [i < size tokens][
+            token: tokens\[i]
+
+            case token [
+                "--" [
+                    i: i + 1
+                    while [i < size tokens][
+                        result\rest: append result\rest tokens\[i]
+                        i: i + 1
+                    ]
+                ]
+                any [
+                    (and? [prefix? token "-"][token <> "-"])? [
+                        flag: parseFlag token
+                        val: flag\value
+                        if string? val [
+                            if numeric? val -> val: to :integer val
+                        ]
+                        (foundCommand?)?
+                            -> result\options\[flag\name]: val
+                            -> result\globals\[flag\name]: val
+                    ][
+                        if and? [not? foundCommand?][in? token knownCommands][
+                            result\command: token
+                            foundCommand?: true
+                        ]
+                        if or? [foundCommand?][not? in? token knownCommands] ->
+                            if token <> result\command ->
+                                result\params: append result\params token
+                    ]
+                ]
+            ]
+
+            i: i + 1
+        ]
+
+        return result
+    ]
 
     parseOptionSpec: function [block :block][
         ; forced order per row:

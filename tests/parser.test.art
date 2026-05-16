@@ -1,5 +1,5 @@
 import {unitt}!
-import ./"../src/parser.art"!
+import ./"../src/climax.art"!
 
 commands: ["serve" "greet" "init"]
 
