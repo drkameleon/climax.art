@@ -43,31 +43,35 @@ define :cli [
         \params:  []
         \rest:    []
 
-        if string? tokens: <= (attr 'using) ?? arg ->
-            tokens: split.words tokens
+        tokens: (attr 'using) ?? arg
+        if string? tokens -> tokens: split.words tokens
 
+        \parse tokens knownCommands
+    ]
+
+    parseFlag: method [token :string][
+        clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
+
+        idxColon: index clean ":"
+        idxEqual: index clean "="
+
+        if and? [null? idxColon][null? idxEqual] ->
+            return #[name: clean value: true]
+
+        sep: ø
+        if null? idxColon -> sep: idxEqual
+        if null? idxEqual -> sep: idxColon
+        if null? sep      -> sep: min @[idxColon idxEqual]
+
+        return #[
+            name:  slice clean 0 (dec sep)
+            value: slice clean (inc sep) (dec size clean)
+        ]
+    ]
+
+    parse: method [tokens :block  knownCommands :block][
         i: 0
         foundCommand?: false
-
-        parseFlag: function [token :string][
-            clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
-
-            idxColon: index clean ":"
-            idxEqual: index clean "="
-
-            if and? [null? idxColon][null? idxEqual] ->
-                return #[name: clean value: true]
-
-            sep: ø
-            if null? idxColon -> sep: idxEqual
-            if null? idxEqual -> sep: idxColon
-            if null? sep      -> sep: min @[idxColon idxEqual]
-
-            return #[
-                name:  slice clean 0 (dec sep)
-                value: slice clean (inc sep) (dec size clean)
-            ]
-        ]
 
         while [i < size tokens][
             token: tokens\[i]
@@ -82,7 +86,7 @@ define :cli [
                 ]
                 any [
                     (and? [prefix? token "-"][token <> "-"])? [
-                        flag: parseFlag token
+                        flag: \parseFlag token
                         val: flag\value
                         if string? val [
                             if numeric? val -> val: to :integer val
