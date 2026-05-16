@@ -54,8 +54,8 @@ climax .with: [
 
     serve: command "Build + local server" [path :string :null] .with: [
         watch?
-        port 'p 8080 :integer "port number"
-        host "localhost" :string "bind host"
+        port 'p  8080       :integer "port number"
+        host    "localhost" :string  "bind host"
     ][
         print ["serving" path ?? "." "on" opts\host ":" opts\port]
         if opts\watch? -> print "watching for changes..."
