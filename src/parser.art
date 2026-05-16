@@ -7,26 +7,33 @@ parseArgs: function [knownCommands :block][
         rest:    []
     ]
 
-    if string? tokens: <= (attr'using) ?? arg -> 
-        tokens: split.words tokens
+    tokens: (attr 'using) ?? arg
+    if string? tokens [ tokens: split.words tokens ]
+    tokens: new tokens
 
     i: 0
     foundCommand?: false
 
     parseFlag: function [token :string][
         clean: token
-        (prefix? clean "--")? -> clean: slice clean 2 (dec size clean)
-                              -> clean: slice clean 1 (dec size clean)
+        if prefix? clean "--" [
+            clean: slice clean 2 (dec size clean)
+        ]
+        if not? prefix? token "--" [
+            clean: slice clean 1 (dec size clean)
+        ]
 
         idxColon: index clean ":"
         idxEqual: index clean "="
 
-        sep: null
-        if and? [null? idxColon][null? idxEqual] -> return #[name: clean value: true]
+        if and? [null? idxColon][null? idxEqual] [
+            return #[name: clean value: true]
+        ]
 
-        if null? idxColon -> sep: idxEqual
-        if null? idxEqual -> sep: idxColon
-        if null? sep      -> sep: min @[idxColon idxEqual]
+        sep: null
+        if null? idxColon [ sep: idxEqual ]
+        if null? idxEqual [ sep: idxColon ]
+        if null? sep      [ sep: min @[idxColon idxEqual] ]
 
         return #[
             name:  slice clean 0 (dec sep)
@@ -37,32 +44,39 @@ parseArgs: function [knownCommands :block][
     while [i < size tokens][
         token: tokens\[i]
 
-        case token [
-            "--" [
+        isSep?: token = "--"
+        if isSep? [
+            i: i + 1
+            while [i < size tokens][
+                result\rest: append result\rest tokens\[i]
                 i: i + 1
-                while [i < size tokens][
-                    'result\rest ++ tokens\[i]
-                    i: i + 1
+            ]
+        ]
+        if not? isSep? [
+            isFlag?: and? [prefix? token "-"][token <> "-"]
+            if isFlag? [
+                flag: parseFlag token
+                val: flag\value
+                if string? val [
+                    if numeric? val [ val: to :integer val ]
+                ]
+                if foundCommand? [
+                    result\options\[flag\name]: val
+                ]
+                if not? foundCommand? [
+                    result\globals\[flag\name]: val
                 ]
             ]
-            any [
-                (and? [prefix? token "-"][token <> "-"])? [
-                    flag: parseFlag token
-                    val: flag\value
-                    if string? val [
-                        if numeric? val -> val: to :integer val
+            if not? isFlag? [
+                if and? [not? foundCommand?][in? token knownCommands] [
+                    result\command: token
+                    foundCommand?: true
+                ]
+                takeAsParam?: or? [foundCommand?][not? in? token knownCommands]
+                if takeAsParam? [
+                    if token <> result\command [
+                        result\params: append result\params token
                     ]
-                    (foundCommand?)?
-                        -> result\options\[flag\name]: val
-                        -> result\globals\[flag\name]: val
-                ][
-                    if and? [not? foundCommand?][in? token knownCommands][
-                        result\command: token
-                        foundCommand?: true
-                    ]
-                    if or? [foundCommand?][not? in? token knownCommands]
-                        -> if token <> result\command
-                            -> 'result\params ++ token
                 ]
             ]
         ]
