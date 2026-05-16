@@ -39,39 +39,32 @@ parseArgs: function [knownCommands :block][
     while [i < size tokens][
         token: tokens\[i]
 
-        isSep?: token = "--"
-        if isSep? [
-            i: i + 1
-            while [i < size tokens][
-                result\rest: append result\rest tokens\[i]
+        case token [
+            "--" [
                 i: i + 1
-            ]
-        ]
-        if not? isSep? [
-            isFlag?: and? [prefix? token "-"][token <> "-"]
-            if isFlag? [
-                flag: parseFlag token
-                val: flag\value
-                if string? val [
-                    if numeric? val [ val: to :integer val ]
-                ]
-                if foundCommand? [
-                    result\options\[flag\name]: val
-                ]
-                if not? foundCommand? [
-                    result\globals\[flag\name]: val
+                while [i < size tokens][
+                    result\rest: append result\rest tokens\[i]
+                    i: i + 1
                 ]
             ]
-            if not? isFlag? [
-                if and? [not? foundCommand?][in? token knownCommands] [
-                    result\command: token
-                    foundCommand?: true
-                ]
-                takeAsParam?: or? [foundCommand?][not? in? token knownCommands]
-                if takeAsParam? [
-                    if token <> result\command [
-                        result\params: append result\params token
+            any [
+                (and? [prefix? token "-"][token <> "-"])? [
+                    flag: parseFlag token
+                    val: flag\value
+                    if string? val [
+                        if numeric? val -> val: to :integer val
                     ]
+                    (foundCommand?)?
+                        -> result\options\[flag\name]: val
+                        -> result\globals\[flag\name]: val
+                ][
+                    if and? [not? foundCommand?][in? token knownCommands][
+                        result\command: token
+                        foundCommand?: true
+                    ]
+                    if or? [foundCommand?][not? in? token knownCommands] ->
+                        if token <> result\command ->
+                            result\params: append result\params token
                 ]
             ]
         ]
