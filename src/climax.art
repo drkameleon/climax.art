@@ -145,7 +145,7 @@ climaxModule: module [
             case type tok [
                 :word [
                     if not? null? cur [ specs\[cur\name]: cur ]
-                    cur: to :option @[to :string tok]
+                    cur: to :option @[to :string tok]!
                     sawType: cur\pred?
                 ]
                 :literal [
@@ -346,7 +346,7 @@ climaxModule: module [
         ;; ]
         ;; returns: :command
         optSpec: \parseOptionSpec ((attr 'with) ?? [])
-        return to :command @[desc args optSpec body]
+        return to :command @[desc args optSpec body]!
     ]
 
     climax: method.public [decls :block][
@@ -358,7 +358,7 @@ climaxModule: module [
         globalSpec: \parseOptionSpec withBlock
         commands: \harvestCommands decls
 
-        parsed: to :cli @[keys commands]
+        parsed: to :cli @[keys commands]!
 
         gks: keys parsed\globals
         helpGlobal?:    or? [in? "help"    gks][in? "h" gks]
