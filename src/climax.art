@@ -27,16 +27,12 @@ isPred?: function [name][
 
 newOption: function [nameTok][
     pred?: isPred? nameTok
-    types: []
-    if pred? [
-        types: @[:logical]
-    ]
     return #[
         name:    stripQ nameTok
         pred?:   pred?
         alias:   null
         default: null
-        types:   types
+        types:   (pred?)? -> @[:logical] -> []
         info:    ""
     ]
 ]
