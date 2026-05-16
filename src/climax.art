@@ -33,6 +33,19 @@ define :command [
         opts :dictionary
         body :block
     ]
+
+    run: method [opts :dictionary  rest :block  names :block  values :block][
+        wrapperArgs: @['opts 'rest]
+        wrapperVals: @[opts rest]
+
+        loop.with:'i names 'argName [
+            wrapperArgs: append wrapperArgs argName
+            wrapperVals: append wrapperVals values\[i]
+        ]
+
+        fn: function wrapperArgs \body
+        call fn wrapperVals
+    ]
 ]
 
 define :cli [
@@ -228,25 +241,20 @@ climaxModule: module [
 
     dispatchCommand: method [cmd :command  parsed :cli  globalSpec :dictionary][
         opts: \buildOpts cmd\opts globalSpec parsed
-        rest: parsed\rest
         names: \extractArgNames cmd\args
         params: parsed\params
 
-        wrapperArgs: @['opts 'rest]
-        wrapperVals: @[opts rest]
-
+        values: []
         loop.with:'i names 'argName [
             val: (i < size params)? -> params\[i] -> ø
             if not? null? val [
                 ts: \argTypes cmd\args argName
                 val: \coerceValue val ts
             ]
-            wrapperArgs: append wrapperArgs argName
-            wrapperVals: append wrapperVals val
+            values: append values val
         ]
 
-        fn: function wrapperArgs cmd\body
-        call fn wrapperVals
+        cmd\run opts parsed\rest names values
     ]
 
     ;---------------------------
