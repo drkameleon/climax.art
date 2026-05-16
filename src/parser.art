@@ -14,9 +14,7 @@ parseArgs: function [knownCommands :block][
     foundCommand?: false
 
     parseFlag: function [token :string][
-        clean: token
-        (prefix? clean "--")? -> clean: slice clean 2 (dec size clean)
-                              -> clean: slice clean 1 (dec size clean)
+        clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
 
         idxColon: index clean ":"
         idxEqual: index clean "="
