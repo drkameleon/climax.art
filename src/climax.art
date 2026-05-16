@@ -99,13 +99,17 @@ parseOptionSpec: function [block :block][
 
 coerceValue: function [val  types :block][
     if empty? types [ return val ]
-    loop types 't [
-        if is? t val [ return val ]
-    ]
-    if string? val [
+    if not? string? val [
         loop types 't [
-            try [ return to t val ]
+            if is? t val [ return val ]
         ]
+        return val
+    ]
+    loop types 't [
+        if t = :string [ return val ]
+        converted: null
+        try [ converted: to t val ]
+        if not? null? converted [ return converted ]
     ]
     return val
 ]
