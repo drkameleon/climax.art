@@ -15,7 +15,7 @@ climax .with: [
         who :string :null
     ][
         n: who ?? "world"
-        if opts\verbose [ print "[verbose] hello path" ]
+        if opts\["verbose?"] [ print "[verbose] hello path" ]
         print ~"hello |n|"
     ]
 
@@ -30,7 +30,9 @@ climax .with: [
         port 'p 8080 :integer "port number"
         flag?              "boolean flag"
     ][
-        print ~"verbose=|opts\verbose| port=|opts\port| flag=|opts\flag|"
+        v: opts\["verbose?"]
+        f: opts\["flag?"]
+        print ~"verbose=|v| port=|opts\port| flag=|f|"
     ]
 
     rests: command "echo rest after --" [
