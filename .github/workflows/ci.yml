@@ -58,3 +58,4 @@ jobs:
           arturo -v
           arturo tests/parser.test.art
           arturo tests/climax.test.art
+          arturo tests/climax.cli.test.art
