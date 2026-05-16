@@ -28,7 +28,7 @@ suite "command" [
         ks: keys cmd\opts
         assert -> in? "watch?" ks
         assert -> in? "port"   ks
-        assert -> cmd\opts\["watch?"]\pred? = true
+        assert -> cmd\opts\watch?\pred? = true
         assert -> cmd\opts\port\pred? = false
         assert -> cmd\opts\port\default = 8080
         assert -> cmd\opts\port\alias = "p"
@@ -43,7 +43,7 @@ suite "parseOptionSpec" [
 
     test "bare predicate" [
         s: parseOptionSpec [verbose?]
-        v: s\["verbose?"]
+        v: s\verbose?
         assert -> v\pred? = true
         assert -> v\types = @[:logical]
         assert -> v\alias = null
@@ -53,7 +53,7 @@ suite "parseOptionSpec" [
 
     test "predicate with alias and description" [
         s: parseOptionSpec [quiet? 'q "suppress output"]
-        v: s\["quiet?"]
+        v: s\quiet?
         assert -> v\pred? = true
         assert -> v\alias = "q"
         assert -> v\info = "suppress output"
@@ -192,7 +192,7 @@ suite "buildOpts" [
         ]
 
         merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\["verbose?"] = true
+        assert -> merged\verbose? = true
         assert -> merged\v          = true
         assert -> merged\port       = 9000
     ]
@@ -210,7 +210,7 @@ suite "buildOpts" [
         ]
 
         merged: buildOpts cmdOpts globalSpec parsed
-        assert -> merged\["verbose?"] = false
+        assert -> merged\verbose? = false
         assert -> merged\port       = 8080
         assert -> merged\host       = "localhost"
     ]
