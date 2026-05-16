@@ -13,6 +13,22 @@
 import ./"parser.art"!
 
 ;---------------------------
+; Types
+;---------------------------
+
+define :option [
+    init: method [s :string][
+        \name:    s
+        \cli:     (suffix? s "?")? -> chop s -> s
+        \pred?:   suffix? s "?"
+        \alias:   ø
+        \default: ø
+        \types:   (\pred?)? -> @[:logical] -> []
+        \info:    ""
+    ]
+]
+
+;---------------------------
 ; The main module
 ;---------------------------
 
@@ -20,28 +36,6 @@ climaxModule: module [
     ;---------------------------
     ; Private helpers
     ;---------------------------
-
-    stripQ: method [name][
-        s: to :string name
-        (suffix? s "?")? -> chop s -> s
-    ]
-
-    isPred?: method [name][
-        suffix? to :string name "?"
-    ]
-
-    newOption: method [nameTok][
-        pred?: \isPred? nameTok
-        return #[
-            name:    to :string nameTok
-            cli:     \stripQ nameTok
-            pred?:   pred?
-            alias:   null
-            default: null
-            types:   (pred?)? -> @[:logical] -> []
-            info:    ""
-        ]
-    ]
 
     parseOptionSpec: method [block :block][
         ; forced order per row:
@@ -55,7 +49,7 @@ climaxModule: module [
             case type tok [
                 :word [
                     if not? null? cur [ specs\[cur\name]: cur ]
-                    cur: \newOption tok
+                    cur: to :option @[to :string tok]
                     sawType: cur\pred?
                 ]
                 :literal [
@@ -121,7 +115,7 @@ climaxModule: module [
         return ret
     ]
 
-    resolveOpt: method [spec :dictionary  provided][
+    resolveOpt: method [spec :option  provided][
         if not? null? provided     -> return \coerceValue provided spec\types
         if not? null? spec\default -> return spec\default
         if spec\pred?              -> return false
@@ -176,13 +170,13 @@ climaxModule: module [
     ; Help rendering (private)
     ;---------------------------
 
-    flagLabel: method [spec :dictionary][
+    flagLabel: method [spec :option][
         long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
         (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
                                  -> ~"    |long|"
     ]
 
-    renderOption: method [spec :dictionary][
+    renderOption: method [spec :option][
         line: pad.right (\flagLabel spec) 28
         line: line ++ spec\info
         if not? null? spec\default [
