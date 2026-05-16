@@ -46,7 +46,7 @@ climaxModule: module [
     ; Private helpers
     ;---------------------------
 
-    parseOptionSpec: method [block :block][
+    parseOptionSpec: function [block :block][
         ; forced order per row:
         ;   <name>[?]  ['alias]  [<default>]  [:type ...]  ["description"]
         specs:   #[]
@@ -88,7 +88,7 @@ climaxModule: module [
         return specs
     ]
 
-    coerceValue: method [val  types :block][
+    coerceValue: function [val  types :block][
         if empty? types -> return val
         if not? string? val [
             loop types 't [
@@ -105,10 +105,10 @@ climaxModule: module [
         return val
     ]
 
-    extractArgNames: method [argBlock :block] ->
+    extractArgNames: function [argBlock :block] ->
         select argBlock 'tok -> word? tok
 
-    argTypes: method [argBlock :block  argName :word][
+    argTypes: function [argBlock :block  argName :word][
         ret: []
         seen?: false
         done?: false
@@ -131,7 +131,7 @@ climaxModule: module [
         return ø
     ]
 
-    lookup: method [dict :dictionary  key :string][
+    lookup: function [dict :dictionary  key :string][
         (in? key keys dict)? -> dict\[key] -> ø
     ]
 
@@ -179,7 +179,7 @@ climaxModule: module [
     ; Help rendering (private)
     ;---------------------------
 
-    flagLabel: method [spec :option][
+    flagLabel: function [spec :option][
         long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
         (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
                                  -> ~"    |long|"
@@ -244,7 +244,7 @@ climaxModule: module [
         \renderOptionsSection "GLOBAL OPTIONS" globalSpec
     ]
 
-    harvestCommands: method [decls :block][
+    harvestCommands: function [decls :block][
         ret: #[]
         ctx: dictionary decls
         loop ctx [name val][
