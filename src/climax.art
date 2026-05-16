@@ -269,13 +269,7 @@ renderCommandHelp: function [name :string  cmd :dictionary  globalSpec :dictiona
     print [appName name "—" cmd\info]
     print ""
 
-    names: extractArgNames cmd\args
-    sigParts: []
-    loop names 'a [
-        s: to :string a
-        'sigParts ++ ~"<|s|>"
-    ]
-    argSig: join.with:" " sigParts
+    argSig: join.with:" " map (extractArgNames cmd\args) 'a -> ~"<|to :string a|>"
 
     print "USAGE"
     print ~"  |appName| |name| [OPTIONS] |argSig|"
