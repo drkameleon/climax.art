@@ -24,6 +24,13 @@ define :option [
         \types:   (\pred?)? -> @[:logical] -> []
         \info:    ""
     ]
+
+    fetchFrom: method [src :dictionary][
+        if in? \cli keys src -> return src\[\cli]
+        if and? [not? null? \alias][in? \alias keys src] ->
+            return src\[\alias]
+        return ø
+    ]
 ]
 
 define :command [
@@ -233,20 +240,13 @@ climaxModule: module [
         return ø
     ]
 
-    lookup: function [dict :dictionary  key :string][
-        (in? key keys dict)? -> dict\[key] -> ø
-    ]
-
     buildOpts: method [cmdOpts :dictionary  globalSpec :dictionary  parsed :cli][
         ret: #[]
         loop @[@[globalSpec parsed\globals] @[cmdOpts parsed\options]] 'pair [
             spec: pair\0
             src:  pair\1
-            loop spec [name s][
-                provided: \lookup src s\cli
-                if and? [null? provided][not? null? s\alias] ->
-                    provided: \lookup src s\alias
-                v: \resolveOpt s provided
+            loop spec [name s][!
+                v: \resolveOpt s (s\fetchFrom src)
                 ret\[name]: v
                 if not? null? s\alias -> ret\[s\alias]: v
             ]
