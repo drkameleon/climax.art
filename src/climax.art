@@ -536,6 +536,8 @@ climaxModule: module [
             return ø
         ]
 
+        hasDefault?: in? "default" keys commands
+
         if and? [parsed\help?][null? parsed\command] [
             \renderHelp globalSpec commands
             return ø
@@ -543,14 +545,24 @@ climaxModule: module [
 
         cmdName: parsed\command
         if null? cmdName [
-            \renderHelp globalSpec commands
-            return ø
+            switch hasDefault? [
+                \dispatchNested commands\default [] parsed\params parsed globalSpec
+                return ø
+            ][
+                \renderHelp globalSpec commands
+                return ø
+            ]
         ]
 
         if not? in? cmdName keys commands [
-            print ~"climax: unknown command `|cmdName|`"
-            \renderHelp globalSpec commands
-            return ø
+            switch hasDefault? [
+                \dispatchNested commands\default [] parsed\params parsed globalSpec
+                return ø
+            ][
+                print ~"climax: unknown command `|cmdName|`"
+                \renderHelp globalSpec commands
+                return ø
+            ]
         ]
 
         \dispatchNested commands\[cmdName] @[cmdName] parsed\params parsed globalSpec
