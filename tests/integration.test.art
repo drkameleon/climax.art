@@ -13,11 +13,23 @@ import {unitt}!
 ; Helpers
 ;---------------------------
 
-artBin: sys\binary
-fixture: relative "./partials/app.art"
+artBin:     sys\binary
+fixture:    relative "./partials/app.art"
+flagsOnly:  relative "./partials/flagsonly.art"
+withDef:    relative "./partials/withdefault.art"
 
 runApp: function [argLine :string][
     cmd: ~{|artBin| "|fixture|" |argLine|}
+    return strip execute cmd
+]
+
+runFlagsOnly: function [argLine :string][
+    cmd: ~{|artBin| "|flagsOnly|" |argLine|}
+    return strip execute cmd
+]
+
+runWithDefault: function [argLine :string][
+    cmd: ~{|artBin| "|withDef|" |argLine|}
     return strip execute cmd
 ]
 
@@ -187,6 +199,83 @@ suite "climax CLI" [
     test "nested: persistent flag accepted after leaf name too" [
         out: runApp "remote add --loud origin https://example"
         assert -> contains? out "loud=true"
+    ]
+]
+
+suite "climax default: flag-only" [
+
+    test "bare invocation with positional runs default" [
+        out: runFlagsOnly "example.com"
+        assert -> contains? out "hello example.com"
+        assert -> contains? out "verbose=false"
+    ]
+
+    test "option flag passed to default" [
+        out: runFlagsOnly "-c 3 example.com"
+        assert -> contains? out "#1"
+        assert -> contains? out "#2"
+        assert -> contains? out "#3"
+    ]
+
+    test "global flag visible inside default body" [
+        out: runFlagsOnly "-v example.com"
+        assert -> contains? out "verbose=true"
+    ]
+
+    test "--help shows default's USAGE signature, no COMMANDS section" [
+        out: runFlagsOnly "--help"
+        assert -> contains? out "<host>"
+        assert -> contains? out "--count"
+        assert -> not? contains? out "COMMANDS"
+    ]
+
+    test "--version still works in flag-only mode" [
+        out: runFlagsOnly "--version"
+        assert -> out = "0.0.1"
+    ]
+
+    test "missing required positional reports cleanly" [
+        out: runFlagsOnly ""
+        assert -> contains? out "missing required argument"
+        assert -> contains? out "<host>"
+    ]
+]
+
+suite "climax default: alongside named commands" [
+
+    test "bare invocation runs root default" [
+        out: runWithDefault ""
+        assert -> contains? out "status: nominal"
+    ]
+
+    test "named command still dispatches" [
+        out: runWithDefault "restart"
+        assert -> contains? out "restarting..."
+    ]
+
+    test "root help lists named commands but not 'default'" [
+        out: runWithDefault "--help"
+        assert -> contains? out "restart"
+        assert -> contains? out "remote"
+        assert -> not? contains? out "  default"
+    ]
+
+    test "group with default: bare group runs group default" [
+        out: runWithDefault "remote"
+        assert -> contains? out "origin"
+        assert -> contains? out "upstream"
+    ]
+
+    test "group with default: named sub still dispatches" [
+        out: runWithDefault "remote add origin https://x"
+        assert -> contains? out "added origin https://x"
+    ]
+
+    test "group with default: unknown token falls through to default" [
+        out: runWithDefault "remote --help"
+        assert -> contains? out "COMMANDS"
+        assert -> contains? out "add"
+        assert -> not? contains? out "  default"
     ]
 ]
 

@@ -1,0 +1,20 @@
+;===============================================
+; Fixture CLI — flag-only mode via sole `default:`
+;===============================================
+
+;; name: flagsonly
+;; description: « single-action CLI with no named commands
+;; version: 0.0.1
+
+import ./"../../src/climax.art"!
+
+climax .with: [
+    verbose? 'v "verbose output"
+] [
+    default: command "greet a host" [host :string] .with: [
+        count 'c 1 :integer "number of greetings"
+    ][
+        loop 1..opts\count 'i ->
+            print ~"hello |host| #|i| verbose=|opts\verbose?|"
+    ]
+]

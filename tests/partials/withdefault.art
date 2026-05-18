@@ -1,0 +1,29 @@
+;===============================================
+; Fixture CLI — `default:` alongside named commands
+;===============================================
+
+;; name: withdefault
+;; description: « default action alongside named commands
+;; version: 0.0.1
+
+import ./"../../src/climax.art"!
+
+climax [
+    default: command "show status" [] [
+        print "status: nominal"
+    ]
+
+    restart: command "restart service" [] [
+        print "restarting..."
+    ]
+
+    remote: group "manage remotes" [
+        default: command "list remotes" [] [
+            print "origin"
+            print "upstream"
+        ]
+        add: command "add a remote" [name :string :url :string][
+            print ~"added |name| |url|"
+        ]
+    ]
+]
