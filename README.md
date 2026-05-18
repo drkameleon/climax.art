@@ -15,7 +15,14 @@
 
 - [What does this package do?](#what-does-this-package-do)
 - [How do I use it?](#how-do-i-use-it)
-- [Function Reference](#function-reference)
+    - [Nested subcommands](#nested-subcommands)
+    - [Default action](#default-action)
+- [Function reference](#function-reference)
+    - [`climax`](#climax)
+    - [`command` *(local inside `climax`)*](#command-local-inside-climax)
+    - [`group` *(local inside `climax`)*](#group-local-inside-climax)
+    - [Option row grammar](#option-row-grammar)
+    - [Inside the command body](#inside-the-command-body)
 - [License](#license)
 
 <!--te-->
