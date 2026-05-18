@@ -497,29 +497,6 @@ climaxModule: module [
     ; Public API
     ;---------------------------
 
-    command: method.public [desc :string  args :block  body :block][
-        ;; description: « build a leaf command spec for use inside `climax` or `group`
-        ;; options: [
-        ;;     with: :block « options block (row grammar)
-        ;; ]
-        ;; returns: :command
-        optSpec: \parseOptionSpec ((attr 'with) ?? [])
-        return to :command @[desc args optSpec body]!
-    ]
-
-    group: method.public [desc :string  decls :block][
-        ;; description: « build a command group whose body is a block of sub-command declarations
-        ;; options: [
-        ;;     with: :block « group-level options (persistent — inherited by sub-commands)
-        ;; ]
-        ;; returns: :command
-        optSpec: \parseOptionSpec ((attr 'with) ?? [])
-        subs:    \harvestCommands decls
-        cmd: to :command @[desc [] optSpec []]!
-        cmd\subs: subs
-        return cmd
-    ]
-
     climax: method.public [decls :block][
         ;; description: « build and dispatch a CLI from the given declarations
         ;; options: [
@@ -527,6 +504,24 @@ climaxModule: module [
         ;; ]
         withBlock: (attr 'with) ?? []
         globalSpec: \parseOptionSpec withBlock
+
+        ;; `command` and `group` are only meaningful inside a `climax` decls
+        ;; block, so they live here as locals rather than as public exports.
+        ;; Arturo's `dictionary <decls>` resolves them via dynamic scope.
+
+        command: function [desc :string  args :block  body :block][
+            optSpec: \parseOptionSpec ((attr 'with) ?? [])
+            to :command @[desc args optSpec body]!
+        ]
+
+        group: function [desc :string  decls :block][
+            optSpec: \parseOptionSpec ((attr 'with) ?? [])
+            subs:    \harvestCommands decls
+            cmd: to :command @[desc [] optSpec []]!
+            cmd\subs: subs
+            cmd
+        ]
+
         commands: \harvestCommands decls
 
         parsed: to :cli @[keys commands]!
