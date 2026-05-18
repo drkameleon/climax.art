@@ -1,0 +1,428 @@
+;===============================================
+; Climax.art
+;
+; Minimalist CLI builder
+; for Arturo
+;
+; MIT License
+; (c) 2026 Yanis Zafirópulos
+;==========================================================
+; @file: src/climax.art
+;==========================================================
+
+;---------------------------
+; Types
+;---------------------------
+
+define :option [
+    init: method [s :string][
+        \name:    s
+        \cli:     (suffix? s "?")? -> chop s -> s
+        \pred?:   suffix? s "?"
+        \alias:   ø
+        \default: ø
+        \types:   (\pred?)? -> @[:logical] -> []
+        \info:    ""
+    ]
+
+    fetchFrom: method [src :dictionary][
+        if in? \cli keys src -> return src\[\cli]
+        if and? [not? null? \alias][in? \alias keys src] ->
+            return src\[\alias]
+        return ø
+    ]
+]
+
+define :command [
+    init: constructor [
+        info :string
+        args :block
+        opts :dictionary
+        body :block
+    ]
+
+    run: method [opts :dictionary  rest :block  names :block  values :block][
+        wrapperArgs: @['opts 'rest]
+        wrapperVals: @[opts rest]
+
+        loop.with:'i names 'argName [
+            wrapperArgs: append wrapperArgs argName
+            wrapperVals: append wrapperVals values\[i]
+        ]
+
+        fn: function wrapperArgs \body
+        call fn wrapperVals
+    ]
+]
+
+define :cli [
+    init: method [knownCommands :block][
+        \globals: #[]
+        \command: ø
+        \options: #[]
+        \params:  []
+        \rest:    []
+
+        tokens: (attr 'using) ?? arg
+        if string? tokens -> tokens: split.words tokens
+
+        \parse tokens knownCommands
+    ]
+
+    help?: method [][
+        ks: keys \globals
+        or? [in? "help" ks][in? "h" ks]
+    ]
+
+    version?: method [][
+        ks: keys \globals
+        or? [in? "version" ks][in? "V" ks]
+    ]
+
+    helpFor?: method [][
+        ks: keys \options
+        or? [in? "help" ks][in? "h" ks]
+    ]
+
+    parseFlag: method [token :string][
+        clean: token | drop.times: (prefix? token "--")? -> 2 -> 1
+
+        idxColon: index clean ":"
+        idxEqual: index clean "="
+
+        if and? [null? idxColon][null? idxEqual] ->
+            return #[name: clean value: true]
+
+        sep: ø
+        if null? idxColon -> sep: idxEqual
+        if null? idxEqual -> sep: idxColon
+        if null? sep      -> sep: min @[idxColon idxEqual]
+
+        return #[
+            name:  slice clean 0 (dec sep)
+            value: slice clean (inc sep) (dec size clean)
+        ]
+    ]
+
+    parse: method [tokens :block  knownCommands :block][
+        i: 0
+        foundCommand?: false
+
+        while [i < size tokens][
+            token: tokens\[i]
+
+            case token [
+                "--" [
+                    i: i + 1
+                    while [i < size tokens][
+                        \rest: append \rest tokens\[i]
+                        i: i + 1
+                    ]
+                ]
+                any [
+                    (and? [prefix? token "-"][token <> "-"])? [
+                        flag: \parseFlag token
+                        val: flag\value
+                        if string? val [
+                            if numeric? val -> val: to :integer val
+                        ]
+                        (foundCommand?)?
+                            -> \options\[flag\name]: val
+                            -> \globals\[flag\name]: val
+                    ][
+                        if and? [not? foundCommand?][in? token knownCommands][
+                            \command: token
+                            foundCommand?: true
+                        ]
+                        if or? [foundCommand?][not? in? token knownCommands] ->
+                            if token <> \command ->
+                                \params: append \params token
+                    ]
+                ]
+            ]
+
+            i: i + 1
+        ]
+    ]
+]
+
+;---------------------------
+; The main module
+;---------------------------
+
+climaxModule: module [
+    ;---------------------------
+    ; Private helpers
+    ;---------------------------
+
+    parseOptionSpec: function [block :block][
+        ; forced order per row:
+        ;   <name>[?]  ['alias]  [<default>]  [:type ...]  ["description"]
+        specs:   #[]
+        items:   new block
+        cur:     ø
+        sawType: false
+
+        loop items 'tok [
+            case type tok [
+                :word [
+                    if not? null? cur [ specs\[cur\name]: cur ]
+                    cur: to :option @[to :string tok]!
+                    sawType: cur\pred?
+                ]
+                :literal [
+                    if not? null? cur -> cur\alias: to :string tok
+                ]
+                :type [
+                    if not? null? cur [
+                        cur\types: append cur\types tok
+                        sawType: true
+                    ]
+                ]
+                :string [
+                    if not? null? cur [
+                        if and? [not? sawType][null? cur\default] -> cur\default: tok
+                        if and? [sawType][empty? cur\info]        -> cur\info: tok
+                    ]
+                ]
+                any [
+                    if not? null? cur [
+                        if null? cur\default -> cur\default: tok
+                    ]
+                ]
+            ]
+        ]
+
+        if not? null? cur -> specs\[cur\name]: cur
+        return specs
+    ]
+
+    coerceValue: function [val  types :block][
+        if empty? types -> return val
+        if not? string? val [
+            loop types 't [
+                if is? t val -> return val
+            ]
+            return val
+        ]
+        loop types 't [
+            if t = :string -> return val
+            converted: ø
+            try [ converted: to t val ]
+            if not? null? converted -> return converted
+        ]
+        return val
+    ]
+
+    extractArgNames: function [argBlock :block] ->
+        select argBlock 'tok -> word? tok
+
+    argTypes: function [argBlock :block  argName :word][
+        ret: []
+        seen?: false
+        done?: false
+        loop argBlock 'tok [
+            if not? done? [
+                if word? tok [
+                    if and? [seen?][tok <> argName] -> done?: true
+                    if tok = argName -> seen?: true
+                ]
+                if and? [seen?][:type = type tok] -> 'ret ++ tok
+            ]
+        ]
+        return ret
+    ]
+
+    resolveOpt: method [spec :option  provided][
+        if not? null? provided     -> return \coerceValue provided spec\types
+        if not? null? spec\default -> return spec\default
+        if spec\pred?              -> return false
+        return ø
+    ]
+
+    buildOpts: method [cmdOpts :dictionary  globalSpec :dictionary  parsed :cli][
+        ret: #[]
+        loop @[@[globalSpec parsed\globals] @[cmdOpts parsed\options]] 'pair [
+            spec: pair\0
+            src:  pair\1
+            loop spec [name s][!
+                v: \resolveOpt s (s\fetchFrom src)
+                ret\[name]: v
+                if not? null? s\alias -> ret\[s\alias]: v
+            ]
+        ]
+        return ret
+    ]
+
+    dispatchCommand: method [cmd :command  parsed :cli  globalSpec :dictionary][
+        opts: \buildOpts cmd\opts globalSpec parsed
+        names: \extractArgNames cmd\args
+        params: parsed\params
+
+        values: []
+        loop.with:'i names 'argName [
+            val: (i < size params)? -> params\[i] -> ø
+            if not? null? val [
+                ts: \argTypes cmd\args argName
+                val: \coerceValue val ts
+            ]
+            values: append values val
+        ]
+
+        cmd\run opts parsed\rest names values
+    ]
+
+    ;---------------------------
+    ; Help rendering (private)
+    ;---------------------------
+
+    flagLabel: function [spec :option][
+        long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
+        (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
+                                 -> ~"    |long|"
+    ]
+
+    renderOption: method [spec :option][
+        line: pad.right (\flagLabel spec) 28
+        line: line ++ spec\info
+        if not? null? spec\default [
+            d: to :string spec\default
+            line: line ++ ~" (default: |d|)"
+        ]
+        print "  " ++ line
+    ]
+
+    renderOptionsSection: method [title :string  specs :dictionary][
+        if not? empty? specs [
+            print title
+            loop specs [k s] -> \renderOption s
+            print ""
+        ]
+    ]
+
+    renderHelp: method [globalSpec :dictionary  commands :dictionary][
+        info: script
+        appName: info\name ?? "app"
+        appDesc: info\description ?? ""
+
+        print [appName "—" appDesc]
+        print ""
+
+        print "USAGE"
+        print ~"  |appName| [OPTIONS] <command> [ARGS]"
+        print ""
+
+        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
+
+        if not? empty? commands [
+            print "COMMANDS"
+            loop commands [name cmd] ->
+                print "  " ++ (pad.right name 12) ++ cmd\info
+            print ""
+        ]
+
+        print ~"Run `|appName| <command> --help` for command-specific help."
+    ]
+
+    renderCommandHelp: method [name :string  cmd :command  globalSpec :dictionary][
+        info: script
+        appName: info\name ?? "app"
+
+        print [appName name "—" cmd\info]
+        print ""
+
+        argSig: join.with:" " map (\extractArgNames cmd\args) 'a [
+            s: to :string a
+            (in? :null \argTypes cmd\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
+        ]
+
+        print "USAGE"
+        print ~"  |appName| |name| [OPTIONS] |argSig|"
+        print ""
+
+        \renderOptionsSection "OPTIONS"        cmd\opts
+        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
+    ]
+
+    harvestCommands: function [decls :block][
+        ret: #[]
+        ctx: dictionary decls
+        loop ctx [name val][
+            if is? :command val -> ret\[name]: val
+        ]
+        return ret
+    ]
+
+    ;---------------------------
+    ; Public API
+    ;---------------------------
+
+    command: method.public [desc :string  args :block  body :block][
+        ;; description: « build a command spec for use inside `climax`
+        ;; options: [
+        ;;     with: :block « options block (row grammar)
+        ;; ]
+        ;; returns: :command
+        optSpec: \parseOptionSpec ((attr 'with) ?? [])
+        return to :command @[desc args optSpec body]!
+    ]
+
+    climax: method.public [decls :block][
+        ;; description: « build and dispatch a CLI from the given declarations
+        ;; options: [
+        ;;     with: :block « global options (row grammar)
+        ;; ]
+        withBlock: (attr 'with) ?? []
+        globalSpec: \parseOptionSpec withBlock
+        commands: \harvestCommands decls
+
+        parsed: to :cli @[keys commands]!
+
+        if parsed\version? [
+            print (script\version ?? "?")
+            return ø
+        ]
+
+        if and? [parsed\help?][null? parsed\command] [
+            \renderHelp globalSpec commands
+            return ø
+        ]
+
+        cmdName: parsed\command
+        if null? cmdName [
+            \renderHelp globalSpec commands
+            return ø
+        ]
+
+        if not? in? cmdName keys commands [
+            print ~"climax: unknown command `|cmdName|`"
+            \renderHelp globalSpec commands
+            return ø
+        ]
+
+        cmd: commands\[cmdName]
+        if parsed\helpFor? [
+            \renderCommandHelp cmdName cmd globalSpec
+            return ø
+        ]
+
+        names: \extractArgNames cmd\args
+        missing: []
+        loop.with:'i names 'argName [
+            if i >= size parsed\params [
+                ts: \argTypes cmd\args argName
+                unless in? :null ts -> missing: append missing argName
+            ]
+        ]
+        unless empty? missing [
+            appName: (script\name) ?? "app"
+            miss: join.with:" " map missing 'm -> ~"<|to :string m|>"
+            print ~"|appName| |cmdName|: missing required argument(s): |miss|"
+            return ø
+        ]
+
+        \dispatchCommand cmd parsed globalSpec
+    ]
+]
+
+export climaxModule!

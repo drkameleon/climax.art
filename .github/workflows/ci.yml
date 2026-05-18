@@ -56,4 +56,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           arturo -v
-          arturo test/parser.test.art
+          arturo tests/parser.test.art
+          arturo tests/command.test.art
+          arturo tests/integration.test.art

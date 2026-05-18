@@ -1,0 +1,45 @@
+;===============================================
+; Fixture CLI used by tests/climax.cli.test.art
+;===============================================
+
+;; name: app
+;; description: « fixture CLI for climax integration tests
+;; version: 0.0.1
+
+import ./"../../src/climax.art"!
+
+climax .with: [
+    verbose? 'v "verbose output"
+] [
+    hello: command "say hello" [
+        who :string :null
+    ][
+        n: who ?? "world"
+        if opts\verbose? [ print "[verbose] hello path" ]
+        print ~"hello |n|"
+    ]
+
+    add: command "sum two numbers" [
+        a :integer
+        b :integer
+    ][
+        print a + b
+    ]
+
+    show: command "show options" [] .with: [
+        port 'p 8080 :integer "port number"
+        flag?                 "boolean flag"
+    ][
+        v: opts\verbose?
+        f: opts\flag?
+        print ~"verbose=|v| port=|opts\port| flag=|f|"
+    ]
+
+    rests: command "echo rest after --" [
+        head :string :null
+    ][
+        h: head ?? "none"
+        print ~"head=|h|"
+        print ["rest:" rest]
+    ]
+]

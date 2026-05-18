@@ -1,0 +1,87 @@
+import {unitt}!
+import ./"../src/climax.art"!
+
+;---------------------------
+; command — record shape
+;---------------------------
+
+suite "command" [
+
+    test "no options, simple body" [
+        cmd: command "greet someone" [name :string][
+            print name
+        ]
+        assert -> is? :command cmd
+        assert -> cmd\info = "greet someone"
+        assert -> cmd\args = [name :string]
+        assert -> cmd\opts = #[]
+        assert -> cmd\body = [print name]
+    ]
+
+    test "bare predicate option" [
+        cmd: command "x" [] .with: [verbose?][ print "x" ]
+        ks: keys cmd\opts
+        assert -> in? "verbose?" ks
+        assert -> cmd\opts\verbose?\pred? = true
+        assert -> cmd\opts\verbose?\types = @[:logical]
+        assert -> cmd\opts\verbose?\alias = null
+        assert -> cmd\opts\verbose?\default = null
+        assert -> cmd\opts\verbose?\info = ""
+    ]
+
+    test "predicate with alias and description" [
+        cmd: command "x" [] .with: [quiet? 'q "suppress output"][ print "x" ]
+        assert -> cmd\opts\quiet?\pred? = true
+        assert -> cmd\opts\quiet?\alias = "q"
+        assert -> cmd\opts\quiet?\info = "suppress output"
+    ]
+
+    test "typed option with integer default" [
+        cmd: command "x" [] .with: [port 8080 :integer "port number"][ print "x" ]
+        assert -> cmd\opts\port\pred? = false
+        assert -> cmd\opts\port\default = 8080
+        assert -> cmd\opts\port\types = @[:integer]
+        assert -> cmd\opts\port\info = "port number"
+    ]
+
+    test "typed option with string default before type" [
+        cmd: command "x" [] .with: [host "localhost" :string "bind host"][ print "x" ]
+        assert -> cmd\opts\host\default = "localhost"
+        assert -> cmd\opts\host\types = @[:string]
+        assert -> cmd\opts\host\info = "bind host"
+    ]
+
+    test "full row: alias, default, type, description" [
+        cmd: command "x" [] .with: [config 'c "app.toml" :string "config file"][ print "x" ]
+        assert -> cmd\opts\config\alias = "c"
+        assert -> cmd\opts\config\default = "app.toml"
+        assert -> cmd\opts\config\types = @[:string]
+        assert -> cmd\opts\config\info = "config file"
+    ]
+
+    test "union types" [
+        cmd: command "x" [] .with: [port :integer :string "port number or name"][ print "x" ]
+        assert -> cmd\opts\port\types = @[:integer :string]
+        assert -> cmd\opts\port\info = "port number or name"
+    ]
+
+    test "multiple options in one block" [
+        cmd: command "x" [] .with: [
+            verbose?
+            quiet? 'q "suppress"
+            port 8080 :integer "port number"
+        ][ print "x" ]
+        ks: keys cmd\opts
+        assert -> (size ks) = 3
+        assert -> in? "verbose?" ks
+        assert -> in? "quiet?"   ks
+        assert -> in? "port"     ks
+    ]
+
+    test "no .with: produces empty opts dict" [
+        cmd: command "x" [] [ print "x" ]
+        assert -> cmd\opts = #[]
+    ]
+]
+
+unitt\report 'full

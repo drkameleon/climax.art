@@ -1,0 +1,155 @@
+;===============================================
+; Webforge.art — full Climax example
+;
+; A fictional static-site-generator CLI that showcases every
+; Climax feature in a single file.
+;
+; Try it:
+;   arturo example/webforge.art --help
+;   arturo example/webforge.art --version
+;   arturo example/webforge.art build
+;   arturo example/webforge.art build mysite
+;   arturo example/webforge.art -v build mysite
+;   arturo example/webforge.art serve --help
+;   arturo example/webforge.art serve mysite --watch -p:9000
+;   arturo example/webforge.art deploy --clean mysite production
+;   arturo example/webforge.art tag mysite -- --raw flag passes through
+;===============================================
+
+;-------------------------------------------------------
+; Script metadata — Climax reads these for auto --help
+; and --version. Use `;;` (double-semicolon) for the
+; structured data comments that Arturo's `script` exposes.
+;-------------------------------------------------------
+
+;; name: webforge
+;; description: « stupid simple static site generator
+;; version: 1.0.0
+;; author: drkameleon
+
+import ./"../src/climax.art"!
+
+;-------------------------------------------------------
+; The CLI itself
+;
+;   climax .with: <globals-block> <decls-block>
+;
+;   - `.with:`  optional attribute carrying global options
+;               (rows follow the same grammar as per-command
+;               options below).
+;   - <decls>   block of `name: command ...` bindings.
+;
+; Each command:
+;
+;   <name>: command <description :string>
+;                   <args :block>
+;                   [.with: <options-block>]
+;                   <body :block>
+;
+; Inside every body Climax injects:
+;
+;   - each positional arg as its own local symbol
+;   - `opts`  dict of all resolved options (globals + per-cmd)
+;             with defaults applied and types coerced
+;   - `rest`  block of raw args after `--`
+;
+; Option row grammar (forced order, every slot optional except name):
+;
+;   <name>[?]  ['alias]  [<default>]  [:type ...]  ["description"]
+;
+;   - Trailing `?` in the name → predicate (boolean flag).
+;     Type is implicitly `:logical`, default is `false`.
+;   - `'alias`        single-letter short form (`-x`)
+;   - <default>       default value (string defaults sit
+;                     BEFORE the type slot, descriptions AFTER)
+;   - `:type ...`     one or more type literals (union OK)
+;   - "description"   human-readable help text
+;-------------------------------------------------------
+
+climax .with: [
+    ; Two global flags, available on every command.
+    verbose?  'v  "verbose output"
+    quiet?    'q  "suppress all output"
+] [
+
+    ;---------------------------------------------------
+    ; `build` — one required positional, no options
+    ;---------------------------------------------------
+    build: command "Build the site" [
+        path :string :null
+    ][
+        ; `path` is the positional; `:null` in its union
+        ; means it's optional. Default to "." in the body.
+        root: path ?? "."
+
+        if opts\verbose? [
+            print ~"[verbose] starting build in |root|"
+        ]
+        print ~"BUILD → compiling |root|/src into |root|/build"
+    ]
+
+    ;---------------------------------------------------
+    ; `serve` — full feature showcase
+    ;   * predicate flag (`--watch`)
+    ;   * aliased typed option with default (`-p / --port`)
+    ;   * string-defaulted typed option (`--host`)
+    ;---------------------------------------------------
+    serve: command "Build + local server" [
+        path :string :null
+    ] .with: [
+        watch?                           "rebuild on source changes"
+        port  'p  8080         :integer  "port number"
+        host      "localhost"  :string   "bind host"
+    ][
+        root: path ?? "."
+
+        if opts\verbose? [
+            print ~"[verbose] preparing server for |root|"
+        ]
+        print ~"SERVE → http://|opts\host|:|opts\port|  (root: |root|)"
+        if opts\watch? [
+            print "       watching source for changes..."
+        ]
+    ]
+
+    ;---------------------------------------------------
+    ; `deploy` — TWO positionals + a switch
+    ;---------------------------------------------------
+    deploy: command "Deploy build folder via rsync or GitHub Pages" [
+        path   :string :null
+        target :string
+    ] .with: [
+        clean?  "wipe remote before syncing (DANGEROUS)"
+    ][
+        root: path ?? "."
+        if opts\clean? [
+            print ~"DEPLOY → CLEAN sync of |root| to |target|"
+        ]
+        if not? opts\clean? [
+            print ~"DEPLOY → incremental sync of |root| to |target|"
+        ]
+    ]
+
+    ;---------------------------------------------------
+    ; `tag` — shows `rest` (post-`--` raw args)
+    ;---------------------------------------------------
+    tag: command "Tag a release; raw args after -- forwarded to git" [
+        path :string :null
+    ][
+        root: path ?? "."
+        print ~"TAG → creating release tag in |root|"
+        if not? empty? rest [
+            print ["       extra git args:" rest]
+        ]
+    ]
+
+    ;---------------------------------------------------
+    ; `clean` — no options, optional positional
+    ;---------------------------------------------------
+    clean: command "Remove the build directory" [
+        path :string :null
+    ][
+        root: path ?? "."
+        print ~"CLEAN → removing |root|/build"
+    ]
+]
