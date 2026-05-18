@@ -103,6 +103,32 @@ suite "climax CLI" [
         assert -> contains? out "USAGE"
         assert -> contains? out "COMMANDS"
     ]
+
+    test "missing required positional errors cleanly" [
+        out: runApp "add"
+        assert -> contains? out "missing required argument"
+        assert -> contains? out "add"
+        assert -> contains? out "<a>"
+        assert -> contains? out "<b>"
+    ]
+
+    test "supplying required positionals works" [
+        out: runApp "add 3 4"
+        assert -> out = "7"
+    ]
+
+    test "optional positional may be omitted" [
+        out: runApp "hello"
+        assert -> out = "hello world"
+    ]
+
+    test "command help shows required vs optional" [
+        out: runApp "add --help"
+        assert -> contains? out "<a>"
+        assert -> contains? out "<b>"
+        out2: runApp "hello --help"
+        assert -> contains? out2 "[<who>]"
+    ]
 ]
 
 unitt\report 'full
