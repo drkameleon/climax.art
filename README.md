@@ -20,8 +20,8 @@
     - [Default action](#default-action)
 - [Function reference](#function-reference)
     - [`climax`](#climax)
-    - [`command` *(local inside `climax`)*](#command-local-inside-climax)
-    - [`group` *(local inside `climax`)*](#group-local-inside-climax)
+    - [`command`](#command)
+    - [`group`](#group)
     - [Option row grammar](#option-row-grammar)
     - [Inside the command body](#inside-the-command-body)
 - [License](#license)
@@ -174,7 +174,7 @@ build and dispatch a CLI from the given declarations
 > [!NOTE]
 > `command` and `group` are not module-level exports — they only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else is an error.
 
-#### `command` *(local inside `climax`)*
+#### `command`
 
 Builds a leaf command spec.
 
@@ -190,7 +190,7 @@ Returns `:command`.
 
 <hr/>
 
-#### `group` *(local inside `climax`)*
+#### `group`
 
 Builds a command group whose body is a block of sub-command declarations.
 
