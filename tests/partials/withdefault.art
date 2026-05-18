@@ -22,7 +22,10 @@ climax [
             print "origin"
             print "upstream"
         ]
-        add: command "add a remote" [name :string :url :string][
+        add: command "add a remote" [
+            name :string
+            url  :string
+        ][
             print ~"added |name| |url|"
         ]
     ]

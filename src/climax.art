@@ -288,7 +288,7 @@ climaxModule: module [
 
     displayLabel: function [pathSoFar :block][
         appName: (script\name) ?? "app"
-        (empty? pathSoFar)? -> appName -> ~"|appName| |join.with:" " pathSoFar|"
+        (empty? pathSoFar)? -> appName -> appName ++ " " ++ join.with:" " pathSoFar
     ]
 
     visibleCommands: function [commands :dictionary][
@@ -313,7 +313,8 @@ climaxModule: module [
                     \dispatchNested cmd\subs\default pathSoFar params parsed nextGlobals
                     return ø
                 ]
-                print ~"|\displayLabel pathSoFar|: unknown sub-command `|nextName|`"
+                label: \displayLabel pathSoFar
+                print ~"|label|: unknown sub-command `|nextName|`"
                 \renderGroupHelp pathSoFar cmd nextGlobals
                 return ø
             ]
@@ -347,7 +348,8 @@ climaxModule: module [
         ]
         unless empty? missing [
             miss: join.with:" " map missing 'm -> ~"<|to :string m|>"
-            print ~"|\displayLabel pathSoFar|: missing required argument(s): |miss|"
+            label: \displayLabel pathSoFar
+            print ~"|label|: missing required argument(s): |miss|"
             return ø
         ]
 

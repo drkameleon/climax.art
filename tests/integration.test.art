@@ -211,7 +211,7 @@ suite "climax default: flag-only" [
     ]
 
     test "option flag passed to default" [
-        out: runFlagsOnly "-c 3 example.com"
+        out: runFlagsOnly "-c:3 example.com"
         assert -> contains? out "#1"
         assert -> contains? out "#2"
         assert -> contains? out "#3"
