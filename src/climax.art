@@ -331,7 +331,10 @@ climaxModule: module [
         print [appName name "—" cmd\info]
         print ""
 
-        argSig: join.with:" " map (\extractArgNames cmd\args) 'a -> ~"<|to :string a|>"
+        argSig: join.with:" " map (\extractArgNames cmd\args) 'a [
+            s: to :string a
+            (in? :null \argTypes cmd\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
+        ]
 
         print "USAGE"
         print ~"  |appName| |name| [OPTIONS] |argSig|"
