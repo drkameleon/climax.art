@@ -28,8 +28,8 @@ define :climaxTemplate [
 
     argSig: method [args :block][
         join.with:" " map args 'a [
-            n: \styleArg a\name
-            (a\required)? -> ~"<|n|>" -> ~"[<|n|>]"
+            token: (a\required)? -> ~"<|a\name|>" -> ~"[<|a\name|>]"
+            \styleArg token
         ]
     ]
 

@@ -373,15 +373,15 @@ export module [
 
     pickTemplate: function [][
         tplAttr: attr 'template
-        if null? tplAttr   -> return \loadBundled "plain"
+        if null? tplAttr   -> return \loadBundled "default"
         if string? tplAttr [
             return do read tplAttr!
         ]
         name: to :string tplAttr
         case name [
-            "plain"   [ return \loadBundled "plain" ]
             "default" [ return \loadBundled "default" ]
-            any       [ return \loadBundled "plain" ]
+            "plain"   [ return \loadBundled "plain" ]
+            any       [ return \loadBundled "default" ]
         ]
     ]
 
