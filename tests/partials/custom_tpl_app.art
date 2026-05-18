@@ -1,0 +1,13 @@
+;===============================================
+; Fixture CLI — `.template:` set to a user file path
+;===============================================
+
+;; name: customapp
+;; description: « fixture using a user-supplied template file
+;; version: 0.0.1
+
+import ./"../../src/climax.art"!
+
+climax .template: (relative "./custom_tpl.art") [
+    hello: command "say hi" [][ print "hi" ]
+]

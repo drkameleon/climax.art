@@ -1,0 +1,15 @@
+;===============================================
+; Fixture CLI — explicit `.template: 'plain`
+;===============================================
+
+;; name: plainapp
+;; description: « fixture using the plain (no-colour) template
+;; version: 0.0.1
+
+import ./"../../src/climax.art"!
+
+climax .template: 'plain [
+    hello: command "say hi" [who :string :null] [
+        print ["hello" who ?? "world"]
+    ]
+]

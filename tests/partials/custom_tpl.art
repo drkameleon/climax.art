@@ -1,0 +1,14 @@
+;==========================================================
+; User-supplied template — proves `.template: "path"` loads
+; an external template file.
+;==========================================================
+
+define :customTemplate is :climaxTemplate [
+    renderRoot: method [data :dictionary][
+        print "::CUSTOM-TEMPLATE::"
+        print data\appName
+        print "::END::"
+    ]
+]
+
+to :customTemplate []!
