@@ -24,11 +24,12 @@
 
 ### What does this package do?
 
-This package provides a tiny set of building blocks (`climax`, `command`) for declaring command-line interfaces. Every CLI you build with it automatically gets:
+This package provides a tiny set of building blocks (`climax`, `command`, `group`) for declaring command-line interfaces. Every CLI you build with it automatically gets:
 
-- subcommand dispatch
+- subcommand dispatch (arbitrarily nested via `group`)
 - typed positional arguments
 - typed options with aliases, defaults & descriptions
+- persistent (inherited) group-level options
 - `--help` / `--version` for free (read straight from the script metadata)
 - `--` rest-args passthrough
 
@@ -75,6 +76,33 @@ $ webforge -v build mysite
 > [!TIP]
 > Trailing `?` on an option name turns it into a boolean switch. Type defaults to `:logical`, default value to `false`.
 
+#### Nested subcommands
+
+Wrap a block of sub-commands in `group` to build `git`-style nesting:
+
+```red
+climax [
+    remote: group "manage remotes" .with: [
+        loud? 'l "verbose remote ops"
+    ] [
+        add: command "add a remote" [name :string :url :string][
+            print ["adding" name url "loud?" opts\loud?]
+        ]
+        rm: command "remove a remote" [name :string][
+            print ["removing" name]
+        ]
+    ]
+]
+```
+
+```sh
+$ myapp remote --help
+$ myapp remote add origin https://example
+$ myapp remote --loud add origin https://example   ;; persistent flag
+```
+
+Group-level options declared via `.with:` are inherited by every descendant — they can be passed anywhere on the command line and remain visible inside each leaf's `opts` dict. Groups can nest arbitrarily (groups of groups).
+
 ### Function reference
 
 #### `climax`
@@ -101,7 +129,7 @@ build and dispatch a CLI from the given declarations
 
 ##### Description
 
-build a command spec for use inside `climax`
+build a leaf command spec for use inside `climax` or `group`
 
 ##### Usage
 
@@ -114,6 +142,30 @@ build a command spec for use inside `climax`
 | Option | Type(s) | Description |
 |----|----|----|
 | with: | `:block` | options block (row grammar) |
+
+##### Returns
+
+- *:command*
+
+<hr/>
+
+#### `group`
+
+##### Description
+
+build a command group whose body is a block of sub-command declarations
+
+##### Usage
+
+<pre>
+<b>group</b> <ins>desc</ins> <i>:string</i> <ins>decls</ins> <i>:block</i>
+</pre>
+
+##### Attributes
+
+| Option | Type(s) | Description |
+|----|----|----|
+| with: | `:block` | group-level options (persistent — inherited by sub-commands) |
 
 ##### Returns
 

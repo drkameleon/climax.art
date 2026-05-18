@@ -129,6 +129,65 @@ suite "climax CLI" [
         out2: runApp "hello --help"
         assert -> contains? out2 "[<who>]"
     ]
+
+    test "nested: root help lists group as command" [
+        out: runApp ""
+        assert -> contains? out "remote"
+    ]
+
+    test "nested: group --help shows sub-commands" [
+        out: runApp "remote --help"
+        assert -> contains? out "COMMANDS"
+        assert -> contains? out "add"
+        assert -> contains? out "rm"
+        assert -> contains? out "--loud"
+    ]
+
+    test "nested: bare group prints group help" [
+        out: runApp "remote"
+        assert -> contains? out "add"
+        assert -> contains? out "rm"
+    ]
+
+    test "nested: leaf executes via group path" [
+        out: runApp "remote add origin https://example"
+        assert -> contains? out "adding origin https://example"
+    ]
+
+    test "nested: leaf --help shows leaf signature" [
+        out: runApp "remote add --help"
+        assert -> contains? out "<name>"
+        assert -> contains? out "<url>"
+        assert -> contains? out "remote add"
+    ]
+
+    test "nested: missing required positional in leaf" [
+        out: runApp "remote add"
+        assert -> contains? out "missing required argument"
+        assert -> contains? out "remote add"
+        assert -> contains? out "<name>"
+        assert -> contains? out "<url>"
+    ]
+
+    test "nested: unknown sub-command reports error" [
+        out: runApp "remote bogus"
+        assert -> contains? out "unknown sub-command"
+    ]
+
+    test "nested: group's persistent option visible in leaf body" [
+        out: runApp "remote --loud add origin https://example"
+        assert -> contains? out "loud=true"
+    ]
+
+    test "nested: root global flag visible in nested leaf body" [
+        out: runApp "-v remote add origin https://example"
+        assert -> contains? out "verbose=true"
+    ]
+
+    test "nested: persistent flag accepted after leaf name too" [
+        out: runApp "remote add --loud origin https://example"
+        assert -> contains? out "loud=true"
+    ]
 ]
 
 unitt\report 'full

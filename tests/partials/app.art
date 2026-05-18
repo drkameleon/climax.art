@@ -42,4 +42,23 @@ climax .with: [
         print ~"head=|h|"
         print ["rest:" rest]
     ]
+
+    remote: group "manage remotes" .with: [
+        loud? "loud remote ops"
+    ] [
+        add: command "add a remote" [
+            name :string
+            url  :string
+        ][
+            l: opts\loud?
+            v: opts\verbose?
+            print ~"adding |name| |url| loud=|l| verbose=|v|"
+        ]
+
+        rm: command "remove a remote" [
+            name :string
+        ][
+            print ~"removing |name|"
+        ]
+    ]
 ]
