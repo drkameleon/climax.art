@@ -156,7 +156,7 @@ define :cli [
 ; The main module
 ;---------------------------
 
-climaxModule: module [
+export module [
     ;---------------------------
     ; Private helpers
     ;---------------------------
@@ -564,6 +564,4 @@ climaxModule: module [
 
         \dispatchNested commands\[cmdName] @[cmdName] parsed\params parsed globalSpec
     ]
-]
-
-export climaxModule!
+]!
