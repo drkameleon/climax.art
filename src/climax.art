@@ -403,6 +403,21 @@ climaxModule: module [
             return ø
         ]
 
+        names: \extractArgNames cmd\args
+        missing: []
+        loop.with:'i names 'argName [
+            if i >= size parsed\params [
+                ts: \argTypes cmd\args argName
+                unless in? :null ts -> missing: append missing argName
+            ]
+        ]
+        unless empty? missing [
+            appName: (script\name) ?? "app"
+            miss: join.with:" " map missing 'm -> ~"<|to :string m|>"
+            print ~"|appName| |cmdName|: missing required argument(s): |miss|"
+            return ø
+        ]
+
         \dispatchCommand cmd parsed globalSpec
     ]
 ]
