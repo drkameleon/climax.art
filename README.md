@@ -24,12 +24,13 @@
 
 ### What does this package do?
 
-This package provides a tiny set of building blocks (`climax`, `command`, `group`) for declaring command-line interfaces. Every CLI you build with it automatically gets:
+This package exposes a single public entry point — `climax` — and two builders, `command` and `group`, that live inside its decls block. Every CLI you build with it automatically gets:
 
 - subcommand dispatch (arbitrarily nested via `group`)
 - typed positional arguments
 - typed options with aliases, defaults & descriptions
 - persistent (inherited) group-level options
+- a `default:` command that runs when no sub-command is typed
 - `--help` / `--version` for free (read straight from the script metadata)
 - `--` rest-args passthrough
 
@@ -103,6 +104,41 @@ $ myapp remote --loud add origin https://example   ;; persistent flag
 
 Group-level options declared via `.with:` are inherited by every descendant — they can be passed anywhere on the command line and remain visible inside each leaf's `opts` dict. Groups can nest arbitrarily (groups of groups).
 
+#### Default action
+
+Use the reserved key `default:` to declare a command that runs when no recognised sub-command is typed. It can stand alone (flag-only CLI):
+
+```red
+;; name: ping
+climax [
+    default: command "ping a host" [host :string] .with: [
+        count 'c 1 :integer "number of pings"
+    ][
+        loop 1..opts\count 'i -> print ["ping" i "->" host]
+    ]
+]
+```
+
+```sh
+$ ping example.com -c 3
+```
+
+Or sit alongside named commands as a fallback:
+
+```red
+climax [
+    default: command "show status" [] [ print "status: nominal" ]
+    restart: command "restart service" [] [ print "restarting..." ]
+]
+```
+
+```sh
+$ myapp           ;; runs default
+$ myapp restart   ;; runs restart
+```
+
+Inside a `group`, a sibling `default:` works the same way: bare `myapp <group>` runs it, named sub-commands still dispatch. The `default` key is elided from rendered help listings.
+
 ### Function reference
 
 #### `climax`
@@ -125,51 +161,38 @@ build and dispatch a CLI from the given declarations
 
 <hr/>
 
-#### `command`
+> [!NOTE]
+> `command` and `group` are not module-level exports — they only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else is an error.
 
-##### Description
+#### `command` *(local inside `climax`)*
 
-build a leaf command spec for use inside `climax` or `group`
-
-##### Usage
+Builds a leaf command spec.
 
 <pre>
 <b>command</b> <ins>desc</ins> <i>:string</i> <ins>args</ins> <i>:block</i> <ins>body</ins> <i>:block</i>
 </pre>
 
-##### Attributes
-
 | Option | Type(s) | Description |
 |----|----|----|
 | with: | `:block` | options block (row grammar) |
 
-##### Returns
-
-- *:command*
+Returns `:command`.
 
 <hr/>
 
-#### `group`
+#### `group` *(local inside `climax`)*
 
-##### Description
-
-build a command group whose body is a block of sub-command declarations
-
-##### Usage
+Builds a command group whose body is a block of sub-command declarations.
 
 <pre>
 <b>group</b> <ins>desc</ins> <i>:string</i> <ins>decls</ins> <i>:block</i>
 </pre>
 
-##### Attributes
-
 | Option | Type(s) | Description |
 |----|----|----|
 | with: | `:block` | group-level options (persistent — inherited by sub-commands) |
 
-##### Returns
-
-- *:command*
+Returns `:command` (with sub-commands attached).
 
 <hr/>
 
