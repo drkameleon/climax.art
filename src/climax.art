@@ -1,8 +1,8 @@
 ;===============================================
 ; Climax.art
 ;
-; Minimalist CLI builder
-; for Arturo
+; Elegant command-line argument
+; parsing for Arturo
 ;
 ; MIT License
 ; (c) 2026 Yanis Zafirópulos
