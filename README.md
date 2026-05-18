@@ -15,6 +15,7 @@
 
 - [What does this package do?](#what-does-this-package-do)
 - [How do I use it?](#how-do-i-use-it)
+    - [Basic usage](#basic-usage)
     - [Nested subcommands](#nested-subcommands)
     - [Default action](#default-action)
 - [Function reference](#function-reference)
@@ -44,6 +45,8 @@ This package exposes a single public entry point — `climax` — and two builde
 The whole DSL is built on top of three first-class types: `:option`, `:command` and `:cli`.
 
 ### How do I use it?
+
+#### Basic usage
 
 Simply `import` it, declare your commands and pass them to `climax`:
 
