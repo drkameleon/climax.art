@@ -22,8 +22,8 @@
     - [`climax`](#climax)
     - [`command`](#command)
     - [`group`](#group)
-    - [Option row grammar](#option-row-grammar)
-    - [Inside the command body](#inside-the-command-body)
+    - [Declaring options](#declaring-options)
+    - [Accessing values](#accessing-values)
 - [License](#license)
 
 <!--te-->
@@ -206,7 +206,7 @@ Returns `:command` (with sub-commands attached).
 
 <hr/>
 
-#### Option row grammar
+#### Declaring options
 
 Inside any `.with:` block, each option follows the same forced order:
 
@@ -222,7 +222,7 @@ Inside any `.with:` block, each option follows the same forced order:
 | `type` | no | one or more `:type` literals (union); predicates infer `:logical` |
 | `description` | no | trailing `:string` |
 
-##### Inside the command body
+#### Accessing values
 
 Every command body sees three injected locals:
 
