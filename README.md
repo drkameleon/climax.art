@@ -32,7 +32,9 @@
 
 ### What does this package do?
 
-This package exposes a single public entry point — `climax` — and two builders, `command` and `group`, that live inside its decls block. Every CLI you build with it automatically gets:
+This package exposes a single public entry point (`climax`) and two builders, `command` and `group`, that can be accessed from the main block. 
+
+Every CLI you build with it automatically gets:
 
 - subcommand dispatch (arbitrarily nested via `group`)
 - typed positional arguments
@@ -112,7 +114,7 @@ $ myapp remote add origin https://example
 $ myapp remote --loud add origin https://example   ;; persistent flag
 ```
 
-Group-level options declared via `.with:` are inherited by every descendant — they can be passed anywhere on the command line and remain visible inside each leaf's `opts` dict. Groups can nest arbitrarily (groups of groups).
+Group-level options declared via `.with:` are inherited by every descendant; they can be passed anywhere on the command line and remain visible inside each leaf's `opts` dict. Groups can nest arbitrarily (groups of groups).
 
 #### Default action
 
@@ -172,7 +174,7 @@ build and dispatch a CLI from the given declarations
 <hr/>
 
 > [!NOTE]
-> `command` and `group` are not module-level exports — they only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else is an error.
+> `command` and `group` are not module-level exports; they only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else will result in an error.
 
 #### `command`
 
@@ -200,7 +202,7 @@ Builds a command group whose body is a block of sub-command declarations.
 
 | Option | Type(s) | Description |
 |----|----|----|
-| with: | `:block` | group-level options (persistent — inherited by sub-commands) |
+| with: | `:block` | group-level options (persistent / inherited by sub-commands) |
 
 Returns `:command` (with sub-commands attached).
 
@@ -226,8 +228,8 @@ Inside any `.with:` block, each option follows the same forced order:
 
 Every command body sees three injected locals:
 
-- `opts` — dict of resolved options (globals + per-command, with defaults applied)
-- `rest` — block of raw args after `--`
+- `opts`: dict of resolved options (globals + per-command, with defaults applied)
+- `rest`: block of raw args after `--`
 - each positional arg, bound to its declared name
 
 ### License
