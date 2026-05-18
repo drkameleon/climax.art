@@ -1,0 +1,9 @@
+;==========================================================
+; climax template: plain
+;
+; Black-and-white output. Style primitives stay as identity
+; (the base type's defaults), so the rendered help is plain
+; text with no ANSI escapes.
+;==========================================================
+
+to :climaxTemplate []!

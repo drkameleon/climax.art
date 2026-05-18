@@ -153,6 +153,12 @@ define :cli [
 ]
 
 ;---------------------------
+; Help-template base type
+;---------------------------
+
+do read relative "./templates/base.art"
+
+;---------------------------
 ; The main module
 ;---------------------------
 
@@ -357,133 +363,139 @@ export module [
     ]
 
     ;---------------------------
-    ; Help rendering (private)
+    ; Template selection
     ;---------------------------
 
-    flagLabel: function [spec :option][
-        long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
-        (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
-                                 -> ~"    |long|"
+    loadBundled: function [name :string][
+        path: relative "./templates/" ++ name ++ ".art"
+        do read path!
     ]
 
-    renderOption: method [spec :option][
-        line: pad.right (\flagLabel spec) 28
-        line: line ++ spec\info
-        if not? null? spec\default [
-            d: to :string spec\default
-            line: line ++ ~" (default: |d|)"
+    pickTemplate: function [][
+        tplAttr: attr 'template
+        if null? tplAttr   -> return \loadBundled "plain"
+        if string? tplAttr [
+            return do read tplAttr!
         ]
-        print "  " ++ line
+        name: to :string tplAttr
+        case name [
+            "plain"   [ return \loadBundled "plain" ]
+            "default" [ return \loadBundled "default" ]
+            any       [ return \loadBundled "plain" ]
+        ]
     ]
 
-    renderOptionsSection: method [title :string  specs :dictionary][
-        if not? empty? specs [
-            print title
-            loop specs [k s] -> \renderOption s
-            print ""
+    ;---------------------------
+    ; Data builders for templates
+    ;---------------------------
+
+    buildOptionEntries: function [specs :dictionary][
+        ret: []
+        loop specs [k s][!
+            long: (s\pred?)? -> "--" ++ s\cli -> "--" ++ s\name ++ "=VALUE"
+            flag: (null? s\alias)?
+                -> "    " ++ long
+                -> "-" ++ s\alias ++ ", " ++ long
+            entry: #[
+                flag:        flag
+                info:        s\info
+                default:     (null? s\default)? -> ø -> to :string s\default
+                isPredicate: s\pred?
+            ]
+            ret: append ret entry
         ]
+        return ret
     ]
+
+    buildSubcommandEntries: function [visible :dictionary][
+        ret: []
+        loop visible [name cmd][!
+            entry: #[
+                name:    name
+                info:    cmd\info
+                isGroup: not? null? cmd\subs
+            ]
+            ret: append ret entry
+        ]
+        return ret
+    ]
+
+    buildArgEntries: function [argBlock :block][
+        names: \extractArgNames argBlock
+        ret: []
+        loop names 'a [
+            ts: \argTypes argBlock a
+            entry: #[
+                name:     to :string a
+                required: not? in? :null ts
+            ]
+            ret: append ret entry
+        ]
+        return ret
+    ]
+
+    defaultMeta: function [commands :dictionary][
+        if not? in? "default" keys commands -> return @[ø ø]
+        def: commands\default
+        @[\buildArgEntries def\args  \buildOptionEntries def\opts]
+    ]
+
+    ;---------------------------
+    ; Help rendering (delegates to template)
+    ;---------------------------
 
     renderHelp: method [globalSpec :dictionary  commands :dictionary][
         info: script
         appName: info\name ?? "app"
         appDesc: info\description ?? ""
 
-        print [appName "—" appDesc]
-        print ""
-
         visible: \visibleCommands commands
-        hasDefault?: in? "default" keys commands
+        defMeta: \defaultMeta commands
 
-        print "USAGE"
-        switch hasDefault? [
-            def: commands\default
-            argSig: join.with:" " map (\extractArgNames def\args) 'a [
-                s: to :string a
-                (in? :null \argTypes def\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
-            ]
-            (empty? visible)?
-                -> print ~"  |appName| [OPTIONS] |argSig|"
-                -> print ~"  |appName| [OPTIONS] (<command> [ARGS] | |argSig|)"
-        ][
-            print ~"  |appName| [OPTIONS] <command> [ARGS]"
+        data: #[
+            kind:           'root
+            appName:        appName
+            appDesc:        appDesc
+            globalOptions:  \buildOptionEntries globalSpec
+            subcommands:    \buildSubcommandEntries visible
+            defaultArgs:    defMeta\0
+            defaultOptions: defMeta\1
         ]
-        print ""
-
-        if hasDefault? [
-            def: commands\default
-            if not? empty? def\opts [
-                \renderOptionsSection "OPTIONS" def\opts
-            ]
-        ]
-
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
-
-        if not? empty? visible [
-            print "COMMANDS"
-            loop visible [name cmd] ->
-                print "  " ++ (pad.right name 12) ++ cmd\info
-            print ""
-        ]
-
-        if not? empty? visible ->
-            print ~"Run `|appName| <command> --help` for command-specific help."
+        tpl: \pickTemplate!
+        tpl\renderRoot data
     ]
 
     renderGroupHelp: method [pathSoFar :block  cmd :command  globalSpec :dictionary][
-        label: \displayLabel pathSoFar
         visible: \visibleCommands cmd\subs
-        hasDefault?: in? "default" keys cmd\subs
+        defMeta: \defaultMeta cmd\subs
 
-        print [label "—" cmd\info]
-        print ""
-
-        print "USAGE"
-        switch hasDefault? [
-            def: cmd\subs\default
-            argSig: join.with:" " map (\extractArgNames def\args) 'a [
-                s: to :string a
-                (in? :null \argTypes def\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
-            ]
-            (empty? visible)?
-                -> print ~"  |label| [OPTIONS] |argSig|"
-                -> print ~"  |label| [OPTIONS] (<command> [ARGS] | |argSig|)"
-        ][
-            print ~"  |label| [OPTIONS] <command> [ARGS]"
+        data: #[
+            kind:           'group
+            appName:        (script\name) ?? "app"
+            pathLabel:      \displayLabel pathSoFar
+            info:           cmd\info
+            options:        \buildOptionEntries cmd\opts
+            globalOptions:  \buildOptionEntries globalSpec
+            subcommands:    \buildSubcommandEntries visible
+            defaultArgs:    defMeta\0
+            defaultOptions: defMeta\1
         ]
-        print ""
-
-        \renderOptionsSection "OPTIONS"        cmd\opts
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
-
-        if not? empty? visible [
-            print "COMMANDS"
-            loop visible [name sub] ->
-                print "  " ++ (pad.right name 12) ++ sub\info
-            print ""
-        ]
-
-        if not? empty? visible ->
-            print ~"Run `|label| <command> --help` for command-specific help."
+        tpl: \pickTemplate!
+        tpl\renderGroup data
     ]
 
     renderCommandHelp: method [pathSoFar :block  cmd :command  globalSpec :dictionary][
-        label: \displayLabel pathSoFar
-
-        print [label "—" cmd\info]
-        print ""
-
-        argSig: join.with:" " map (\extractArgNames cmd\args) 'a [
-            s: to :string a
-            (in? :null \argTypes cmd\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
+        data: #[
+            kind:           'command
+            appName:        (script\name) ?? "app"
+            pathLabel:      \displayLabel pathSoFar
+            info:           cmd\info
+            args:           \buildArgEntries cmd\args
+            options:        \buildOptionEntries cmd\opts
+            globalOptions:  \buildOptionEntries globalSpec
         ]
-
-        print "USAGE"
-        print ~"  |label| [OPTIONS] |argSig|"
-        print ""
-
-        \renderOptionsSection "OPTIONS"        cmd\opts
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
+        tpl: \pickTemplate!
+        tpl\renderCommand data
     ]
 
     harvestCommands: function [decls :block][

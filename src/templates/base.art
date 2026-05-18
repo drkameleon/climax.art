@@ -1,0 +1,140 @@
+;==========================================================
+; climax base template type
+;
+; Defines `:climaxTemplate` — a plain-text help renderer.
+; Other templates inherit via `define :foo is :climaxTemplate
+; [...]` and override the style primitives (or any structural
+; method) to change presentation.
+;==========================================================
+
+define :climaxTemplate [
+    init: method [][]
+
+    ;---------------------------
+    ; Style primitives — identity by default; override in a
+    ; subtype to add colour, bold, etc.
+    ;---------------------------
+
+    styleApp:     method [s :string] -> s
+    styleSection: method [s :string] -> s
+    styleFlag:    method [s :string] -> s
+    styleArg:     method [s :string] -> s
+    styleCommand: method [s :string] -> s
+    styleDim:     method [s :string] -> s
+
+    ;---------------------------
+    ; Structural pieces
+    ;---------------------------
+
+    argSig: method [args :block][
+        join.with:" " map args 'a [
+            n: \styleArg a\name
+            (a\required)? -> ~"<|n|>" -> ~"[<|n|>]"
+        ]
+    ]
+
+    optionLine: method [entry :dictionary][
+        line: pad.right (\styleFlag entry\flag) 28
+        line: line ++ entry\info
+        if not? null? entry\default [
+            d: entry\default
+            line: line ++ \styleDim ~" (default: |d|)"
+        ]
+        print "  " ++ line
+    ]
+
+    optionsSection: method [title :string  entries :block][
+        if not? empty? entries [
+            print \styleSection title
+            loop entries 'e -> \optionLine e
+            print ""
+        ]
+    ]
+
+    subcommandList: method [subs :block][
+        if not? empty? subs [
+            print \styleSection "COMMANDS"
+            loop subs 'e [
+                name: \styleCommand pad.right e\name 12
+                print "  " ++ name ++ e\info
+            ]
+            print ""
+        ]
+    ]
+
+    usageLine: method [label :string  data :dictionary][
+        hasSubs?:    not? empty? data\subcommands
+        hasDefault?: not? null? data\defaultArgs
+        styledLabel: \styleApp label
+
+        (hasDefault?)? [
+            sig: \argSig data\defaultArgs
+            switch hasSubs? [
+                print ~"  |styledLabel| [OPTIONS] (<command> [ARGS] | |sig|)"
+            ][
+                print ~"  |styledLabel| [OPTIONS] |sig|"
+            ]
+        ][
+            print ~"  |styledLabel| [OPTIONS] <command> [ARGS]"
+        ]
+    ]
+
+    ;---------------------------
+    ; Render entry points
+    ;---------------------------
+
+    renderRoot: method [data :dictionary][
+        print [\styleApp data\appName "—" data\appDesc]
+        print ""
+
+        print \styleSection "USAGE"
+        \usageLine data\appName data
+        print ""
+
+        if not? null? data\defaultOptions ->
+            \optionsSection "OPTIONS" data\defaultOptions
+
+        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+        \subcommandList data\subcommands
+
+        if not? empty? data\subcommands [
+            tip: ~"Run `|data\appName| <command> --help` for command-specific help."
+            print \styleDim tip
+        ]
+    ]
+
+    renderGroup: method [data :dictionary][
+        label: data\pathLabel
+
+        print [\styleApp label "—" data\info]
+        print ""
+
+        print \styleSection "USAGE"
+        \usageLine label data
+        print ""
+
+        \optionsSection "OPTIONS"        data\options
+        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+        \subcommandList data\subcommands
+
+        if not? empty? data\subcommands [
+            tip: ~"Run `|label| <command> --help` for command-specific help."
+            print \styleDim tip
+        ]
+    ]
+
+    renderCommand: method [data :dictionary][
+        label: data\pathLabel
+        sig:   \argSig data\args
+
+        print [\styleApp label "—" data\info]
+        print ""
+
+        print \styleSection "USAGE"
+        print ~"  |\styleApp label| [OPTIONS] |sig|"
+        print ""
+
+        \optionsSection "OPTIONS"        data\options
+        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+    ]
+]
