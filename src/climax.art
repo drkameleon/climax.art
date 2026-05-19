@@ -296,11 +296,9 @@ export module [
     ]
 
     visibleCommands: function [commands :dictionary][
-        ret: #[]
-        loop commands [name cmd] ->
-            if name <> "default" -> 
-                ret\[name]: cmd
-        return ret
+        #.raw select commands [name cmd][
+            name <> "default"
+        ]
     ]
 
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
