@@ -153,10 +153,15 @@ define :cli [
 ]
 
 ;---------------------------
-; Help-template base type
+; Help templates
+;
+; Every bundled template is imported up-front so its `:xxxTemplate`
+; type is registered before climax runs. `pickTemplate` then just
+; instantiates the type named after the chosen template.
 ;---------------------------
 
-do read relative "./templates/base.art"
+import ./"templates/plain"!
+import ./"templates/default"!
 
 ;---------------------------
 ; The main module
@@ -367,22 +372,14 @@ export module [
     ;---------------------------
 
     loadBundled: function [name :string][
-        path: relative "./templates/" ++ name ++ ".art"
-        do read path!
+        do ~"to :|name|Template []"!
     ]
 
     pickTemplate: function [][
         tplAttr: attr 'template
-        if null? tplAttr   -> return \loadBundled "default"
-        if string? tplAttr [
-            return do read tplAttr!
-        ]
+        if null? tplAttr -> return \loadBundled "default"
         name: to :string tplAttr
-        case name [
-            "default" [ return \loadBundled "default" ]
-            "plain"   [ return \loadBundled "plain" ]
-            any       [ return \loadBundled "default" ]
-        ]
+        \loadBundled name
     ]
 
     ;---------------------------

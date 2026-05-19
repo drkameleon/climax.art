@@ -165,13 +165,7 @@ climax .template: 'plain [
 ]
 ```
 
-You can also point `.template:` at a path string to load your own:
-
-```red
-climax .template: "./my-tmpl.art" [...]
-```
-
-A user template file inherits from `:climaxTemplate` via Arturo's `is` and overrides just the bits it cares about:
+Roll your own template by defining a `:xxxTemplate` type and selecting it with the matching literal. Import your template file before calling `climax`:
 
 ```red
 ;; my-tmpl.art
@@ -179,13 +173,21 @@ define :myTemplate is :climaxTemplate [
     styleApp:     method [s :string] -> color.bold #red s
     styleSection: method [s :string] -> color.bold #yellow s
 ]
-
-to :myTemplate []!
 ```
 
-The six style primitives — `styleApp`, `styleSection`, `styleFlag`, `styleArg`, `styleCommand`, `styleDim` — are the recommended override points. Override structural methods (`renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`) if you need to restructure rather than just recolour.
+```red
+;; your CLI
+import "climax"!
+import "./my-tmpl"!
 
-The file must end with an expression that evaluates to an activated instance (`to :yourType []!`).
+climax .template: 'my [
+    serve: command "..." [...] [...]
+]
+```
+
+`.template:` takes a literal `'name`; climax instantiates `to :nameTemplate []` internally. The bundled `'default` and `'plain` follow the same convention — no special-casing for user templates.
+
+The six style primitives — `styleApp`, `styleSection`, `styleFlag`, `styleArg`, `styleCommand`, `styleDim` — are the recommended override points. Override structural methods (`renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`) if you need to restructure rather than just recolour.
 
 ### Function reference
 
@@ -205,8 +207,8 @@ build and dispatch a CLI from the given declarations
 
 | Option | Type(s) | Description |
 |----|----|----|
-| with:     | `:block`             | global options (row grammar) |
-| template: | `:literal` `:string` | help template — `'default` (default), `'plain`, or a path string to a user template file |
+| with:     | `:block`   | global options (row grammar) |
+| template: | `:literal` | help template — `'default` (default), `'plain`, or the literal name of a user-defined `:xxxTemplate` already imported into scope |
 
 <hr/>
 

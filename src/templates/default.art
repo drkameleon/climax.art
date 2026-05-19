@@ -14,6 +14,8 @@
 ;   dim text        gray
 ;==========================================================
 
+import ./"base"!
+
 define :defaultTemplate is :climaxTemplate [
     styleApp:     method [s :string] -> color.bold #green s
     styleSection: method [s :string] -> color.bold #cyan s
@@ -22,5 +24,3 @@ define :defaultTemplate is :climaxTemplate [
     styleCommand: method [s :string] -> color.bold #white s
     styleDim:     method [s :string] -> color #gray s
 ]
-
-to :defaultTemplate []!

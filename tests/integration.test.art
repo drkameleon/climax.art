@@ -323,14 +323,14 @@ suite "help templates" [
         assert -> out = "hello alice"
     ]
 
-    test ".template: <path> loads a user-supplied template" [
+    test "user-defined template selected by literal name" [
         out: runCustom "--help"
         assert -> contains? out "::CUSTOM-TEMPLATE::"
         assert -> contains? out "customapp"
         assert -> contains? out "::END::"
     ]
 
-    test ".template: <path> still leaves command dispatch intact" [
+    test "user-defined template doesn't disturb command dispatch" [
         out: runCustom "hello"
         assert -> out = "hi"
     ]

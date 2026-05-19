@@ -1,6 +1,6 @@
 ;==========================================================
-; User-supplied template — proves `.template: "path"` loads
-; an external template file.
+; User-supplied template — proves user can define a custom
+; `:xxxTemplate` type and select it by literal name.
 ;==========================================================
 
 define :customTemplate is :climaxTemplate [
@@ -10,5 +10,3 @@ define :customTemplate is :climaxTemplate [
         print "::END::"
     ]
 ]
-
-to :customTemplate []!

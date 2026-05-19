@@ -1,13 +1,18 @@
 ;===============================================
-; Fixture CLI — `.template:` set to a user file path
+; Fixture CLI — uses a user-defined template
+;
+; The user imports their template file first
+; (which defines `:customTemplate`), then selects
+; it via `.template: 'custom`.
 ;===============================================
 
 ;; name: customapp
-;; description: « fixture using a user-supplied template file
+;; description: « fixture using a user-supplied template
 ;; version: 0.0.1
 
 import ./"../../src/climax.art"!
+import ./"custom_tpl"!
 
-climax .template: (relative "./custom_tpl.art") [
+climax .template: 'custom [
     hello: command "say hi" [][ print "hi" ]
 ]
