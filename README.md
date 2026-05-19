@@ -326,6 +326,8 @@ Every command body sees three injected locals:
 - `rest`: block of raw args after `--`
 - each positional arg, bound to its declared name
 
+---
+
 ### License
 
 MIT License
