@@ -1,13 +1,8 @@
 ;===============================================
 ; End-to-end CLI tests
-;
-; Runs `tests/partials/app.art` as a real Arturo
-; subprocess and asserts on its stdout. This is what
-; you want if you actually want to know whether Climax
-; broke from a user's perspective.
 ;===============================================
 
-import {unitt}!
+import'unitt!
 
 ;---------------------------
 ; Helpers
