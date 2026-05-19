@@ -95,6 +95,9 @@ $ webforge -v build mysite
 > [!NOTE]
 > Accepted flag-value forms: `--name VALUE`, `--name:VALUE`, `--name=VALUE`, and the same with short aliases. Bundled short booleans work too: `-xvf` ≡ `-x -v -f` whenever every char is a registered single-char predicate alias.
 
+> [!IMPORTANT]
+> Unknown flags and extra positionals are rejected before dispatch. Typos like `--time` (for `--times`) error out instead of silently doing nothing. Tokens after `--` still escape into `rest` unchanged.
+
 #### Nested subcommands
 
 Wrap a block of sub-commands in `group` to build `git`-style nesting:
@@ -204,6 +207,7 @@ Override points are layered so you only touch what you care about:
 | `styleArg` | positional arg placeholders (`<name>` / `[<name>]`) |
 | `styleCommand` | sub-command names in COMMANDS list |
 | `styleDim` | tip footer & `(default: …)` suffix |
+| `styleError` | error-message prefix (`Error:`) |
 
 **Layout primitives** — constants that drive spacing:
 
@@ -229,6 +233,16 @@ Override points are layered so you only touch what you care about:
 | `titleSeparator` | `"—"` (between name and description in titles) |
 | `defaultLabel val` | `" (default: <val>)"` |
 | `tipText label` | `"Run `<label> <command> --help` for command-specific help."` — return `""` to suppress the footer |
+
+**Error rendering** — overridable per error type. Default template wraps each in a two-line block with bold-red `Error:` prefix; plain template inherits a single-line format.
+
+| Method | When |
+|---|---|
+| `renderUnknownCommand name` | top-level unknown command |
+| `renderUnknownSubcommand label name` | unknown sub-command of a group |
+| `renderUnknownOption label badList` | unknown flag(s) at a leaf |
+| `renderTooManyArgs label got max` | more positional args than declared |
+| `renderMissingRequired label missing` | required positional omitted |
 
 **Structural methods** — restructure rather than recolour: `renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`.
 

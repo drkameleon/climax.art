@@ -404,6 +404,29 @@ export module [
         return ret
     ]
 
+    ;---------------------------
+    ; Strict validation
+    ;---------------------------
+
+    builtinOptions: ["help" "h" "version" "V"]
+
+    specNames: function [spec :dictionary][
+        ret: []
+        loop spec [k s][!
+            ret: append ret s\cli
+            unless null? s\alias ->
+                ret: append ret s\alias
+        ]
+        return ret
+    ]
+
+    knownOptionNames: function [globalSpec :dictionary  cmdOpts :dictionary][
+        ret: \specNames globalSpec
+        ret: ret ++ \specNames cmdOpts
+        ret: ret ++ \builtinOptions
+        return ret
+    ]
+
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
         unless null? cmd\subs [
             nextGlobals: extend globalSpec cmd\opts
@@ -421,8 +444,8 @@ export module [
                     \dispatchNested cmd\subs\default pathSoFar params parsed nextGlobals
                     return ø
                 ]
-                label: \displayLabel pathSoFar
-                print ~"|label|: unknown sub-command `|nextName|`"
+                tpl: \pickTemplate!
+                tpl\renderUnknownSubcommand (\displayLabel pathSoFar) nextName
                 \renderGroupHelp pathSoFar cmd nextGlobals
                 return ø
             ]
@@ -446,21 +469,37 @@ export module [
             return ø
         ]
 
+        ;; unknown-option check: any flag not in the accumulated spec
+        ;; (root globals + ancestor groups + this leaf's opts) is rejected.
+        known: \knownOptionNames globalSpec cmd\opts
+        seen: (keys parsed\globals) ++ keys parsed\options
+        unknown: select seen 'k -> not? in? k known
+        unless empty? unknown [
+            tpl: \pickTemplate!
+            tpl\renderUnknownOption (\displayLabel pathSoFar) unknown
+            return ø
+        ]
+
         names: \extractArgNames cmd\args
+
+        ;; extra-positional check: more args than declared
+        if (size params) > size names [
+            tpl: \pickTemplate!
+            tpl\renderTooManyArgs (\displayLabel pathSoFar) (size params) (size names)
+            return ø
+        ]
+
         missing: []
         loop.with:'i names 'argName [
             if i >= size params [
                 ts: \argTypes cmd\args argName
-                unless in? :null ts -> 
+                unless in? :null ts ->
                     missing: append missing argName
             ]
         ]
         unless empty? missing [
-            miss: missing | map 'm -> ~"<|to :string m|>"
-                          | join.with: " "
-
-            label: \displayLabel pathSoFar
-            print ~"|label|: missing required argument(s): |miss|"
+            tpl: \pickTemplate!
+            tpl\renderMissingRequired (\displayLabel pathSoFar) missing
             return ø
         ]
 
@@ -659,7 +698,8 @@ export module [
             (hasDefault?) ? [
                 \dispatchNested commands\default [] parsed\params parsed globalSpec
             ][
-                print ~"climax: unknown command `|cmdName|`"
+                tpl: \pickTemplate!
+                tpl\renderUnknownCommand cmdName
                 \renderHelp globalSpec commands
             ]
             return ø
