@@ -17,4 +17,66 @@ define :defaultTemplate is :climaxTemplate [
     styleCommand: method [s :string] -> color.bold #white s
     styleDim:     method [s :string] -> color #gray s
     styleError:   method [s :string] -> color.bold #red s
+
+    ;---------------------------
+    ; Error rendering — two-line block per error:
+    ;
+    ;     Error: <message>
+    ;            in <path>
+    ;
+    ; …surrounded by blank lines so it stands out from preceding
+    ; CLI output.
+    ;---------------------------
+
+    errorPrefix: method [][
+        \styleError "Error:"
+    ]
+
+    errorWhere: method [label :string][
+        ind:    "       "
+        kw:     \styleDim "in"
+        styled: \styleApp label
+        ~"|ind||kw| |styled|"
+    ]
+
+    renderUnknownCommand: method [name :string][
+        cmd: \styleCommand name
+        print ""
+        print [\errorPrefix "unknown command" ~"`|cmd|`"]
+        print ""
+    ]
+
+    renderUnknownSubcommand: method [label :string  name :string][
+        cmd: \styleCommand name
+        print ""
+        print [\errorPrefix "unknown sub-command" ~"`|cmd|`"]
+        print \errorWhere label
+        print ""
+    ]
+
+    renderUnknownOption: method [label :string  bad :block][
+        flags: bad | map 'u -> \styleFlag ~"--|u|"
+                   | join.with: " "
+        print ""
+        print [\errorPrefix "unknown option(s)" flags]
+        print \errorWhere label
+        print ""
+    ]
+
+    renderTooManyArgs: method [label :string  got :integer  max :integer][
+        detail: ~"(got |got|, expected up to |max|)"
+        print ""
+        print [\errorPrefix "too many arguments" detail]
+        print \errorWhere label
+        print ""
+    ]
+
+    renderMissingRequired: method [label :string  missing :block][
+        miss: missing | map 'm -> \styleArg ~"<|to :string m|>"
+                      | join.with: " "
+        print ""
+        print [\errorPrefix "missing required argument(s)" miss]
+        print \errorWhere label
+        print ""
+    ]
 ]
