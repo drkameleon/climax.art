@@ -372,7 +372,7 @@ export module [
     ;---------------------------
 
     loadBundled: function [name :string][
-        do ~"to :|name|Template []"!
+        do ~"to :|name|Template []"
     ]
 
     pickTemplate: function [][
