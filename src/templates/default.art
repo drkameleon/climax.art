@@ -1,0 +1,19 @@
+;==========================================================
+; climax template: 
+;   default
+;
+; Arturo-style colourful help screens. Inherits all the
+; structural rendering from `:climaxTemplate` and overrides
+; only the style primitives.
+;==========================================================
+
+import ./"base"!
+
+define :defaultTemplate is :climaxTemplate [
+    styleApp:     method [s :string] -> color.bold #green s
+    styleSection: method [s :string] -> color.bold #cyan s
+    styleFlag:    method [s :string] -> color #magenta s
+    styleArg:     method [s :string] -> color #magenta s
+    styleCommand: method [s :string] -> color.bold #white s
+    styleDim:     method [s :string] -> color #gray s
+]

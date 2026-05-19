@@ -121,7 +121,7 @@ define :cli [
                 "--" [
                     i: i + 1
                     while [i < size tokens][
-                        \rest: append \rest tokens\[i]
+                        \rest: \rest ++ tokens\[i]
                         i: i + 1
                     ]
                 ]
@@ -129,9 +129,10 @@ define :cli [
                     (and? [prefix? token "-"][token <> "-"])? [
                         flag: \parseFlag token
                         val: flag\value
-                        if string? val [
-                            if numeric? val -> val: to :integer val
-                        ]
+                        
+                        if and? [string? val][numeric? val] ->
+                            val: to :integer val
+
                         (foundCommand?)?
                             -> \options\[flag\name]: val
                             -> \globals\[flag\name]: val
@@ -142,7 +143,7 @@ define :cli [
                         ]
                         if or? [foundCommand?][not? in? token knownCommands] ->
                             if token <> \command ->
-                                \params: append \params token
+                                \params: \params ++ token
                     ]
                 ]
             ]
@@ -151,6 +152,13 @@ define :cli [
         ]
     ]
 ]
+
+;---------------------------
+; Help templates
+;---------------------------
+
+import ./"templates/plain"!
+import ./"templates/default"!
 
 ;---------------------------
 ; The main module
@@ -172,50 +180,60 @@ export module [
         loop items 'tok [
             case type tok [
                 :word [
-                    if not? null? cur [ specs\[cur\name]: cur ]
+                    unless null? cur -> 
+                        specs\[cur\name]: cur
                     cur: to :option @[to :string tok]!
                     sawType: cur\pred?
                 ]
                 :literal [
-                    if not? null? cur -> cur\alias: to :string tok
+                    unless null? cur -> 
+                        cur\alias: to :string tok
                 ]
                 :type [
-                    if not? null? cur [
+                    unless null? cur [
                         cur\types: append cur\types tok
                         sawType: true
                     ]
                 ]
                 :string [
-                    if not? null? cur [
+                    unless null? cur [
                         if and? [not? sawType][null? cur\default] -> cur\default: tok
                         if and? [sawType][empty? cur\info]        -> cur\info: tok
                     ]
                 ]
                 any [
-                    if not? null? cur [
-                        if null? cur\default -> cur\default: tok
-                    ]
+                    unless null? cur ->
+                        if null? cur\default -> 
+                            cur\default: tok
                 ]
             ]
         ]
 
-        if not? null? cur -> specs\[cur\name]: cur
+        unless null? cur -> 
+            specs\[cur\name]: cur
+
         return specs
     ]
 
     coerceValue: function [val  types :block][
         if empty? types -> return val
-        if not? string? val [
-            loop types 't [
-                if is? t val -> return val
-            ]
+        unless string? val [
+            loop types 't ->
+                if is? t val -> 
+                    return val
+
             return val
         ]
         loop types 't [
-            if t = :string -> return val
+            if t = :string -> 
+                return val
+
             converted: ø
-            try [ converted: to t val ]
-            if not? null? converted -> return converted
+
+            try -> converted: to t val
+
+            unless null? converted -> 
+                return converted
         ]
         return val
     ]
@@ -228,21 +246,22 @@ export module [
         seen?: false
         done?: false
         loop argBlock 'tok [
-            if not? done? [
+            unless done? [
                 if word? tok [
                     if and? [seen?][tok <> argName] -> done?: true
                     if tok = argName -> seen?: true
                 ]
-                if and? [seen?][:type = type tok] -> 'ret ++ tok
+                if and? [seen?][:type = type tok] -> 
+                    'ret ++ tok
             ]
         ]
         return ret
     ]
 
     resolveOpt: method [spec :option  provided][
-        if not? null? provided     -> return \coerceValue provided spec\types
-        if not? null? spec\default -> return spec\default
-        if spec\pred?              -> return false
+        unless null? provided     -> return \coerceValue provided spec\types
+        unless null? spec\default -> return spec\default
+        if spec\pred?             -> return false
         return ø
     ]
 
@@ -254,9 +273,11 @@ export module [
 
         loop @[globalSpec cmdOpts] 'specs [
             loop specs [name s][!
-                v: \resolveOpt s (s\fetchFrom mergedSrc)
+                v: \resolveOpt s s\fetchFrom mergedSrc
                 ret\[name]: v
-                if not? null? s\alias -> ret\[s\alias]: v
+
+                unless null? s\alias -> 
+                    ret\[s\alias]: v
             ]
         ]
         return ret
@@ -268,8 +289,10 @@ export module [
 
         values: []
         loop.with:'i names 'argName [
-            val: (i < size params)? -> params\[i] -> ø
-            if not? null? val [
+            val: (i < size params)? -> params\[i] 
+                                    -> ø
+
+            unless null? val [
                 ts: \argTypes cmd\args argName
                 val: \coerceValue val ts
             ]
@@ -279,34 +302,32 @@ export module [
         cmd\run opts rest names values
     ]
 
-    mergeSpecs: function [a :dictionary  b :dictionary][
-        ret: #[]
-        loop a [k v] -> ret\[k]: v
-        loop b [k v] -> ret\[k]: v
-        return ret
-    ]
-
     displayLabel: function [pathSoFar :block][
-        appName: (script\name) ?? "app"
-        (empty? pathSoFar)? -> appName -> appName ++ " " ++ join.with:" " pathSoFar
+        appName: script\name ?? "app"
+
+        unless empty? pathSoFar -> 
+            'appName ++ " " ++ join.with:" " pathSoFar
+        
+        return appName
     ]
 
     visibleCommands: function [commands :dictionary][
-        ret: #[]
-        loop commands [name cmd] ->
-            if name <> "default" -> ret\[name]: cmd
-        return ret
+        #.raw select commands [name cmd][
+            name <> "default"
+        ]
     ]
 
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
-        if not? null? cmd\subs [
-            nextGlobals: \mergeSpecs globalSpec cmd\opts
+        unless null? cmd\subs [
+            nextGlobals: extend globalSpec cmd\opts
 
-            if not? empty? params [
+            unless empty? params [
                 nextName: params\0
                 if in? nextName keys cmd\subs [
-                    childParams: ((size params) > 1)? -> slice params 1 (dec size params) -> []
-                    \dispatchNested cmd\subs\[nextName] (append pathSoFar nextName) childParams parsed nextGlobals
+                    childParams: (1 < size params)? -> slice params 1 (dec size params) 
+                                                    -> []
+
+                    \dispatchNested cmd\subs\[nextName] pathSoFar ++ nextName childParams parsed nextGlobals
                     return ø
                 ]
                 if in? "default" keys cmd\subs [
@@ -343,11 +364,14 @@ export module [
         loop.with:'i names 'argName [
             if i >= size params [
                 ts: \argTypes cmd\args argName
-                unless in? :null ts -> missing: append missing argName
+                unless in? :null ts -> 
+                    missing: append missing argName
             ]
         ]
         unless empty? missing [
-            miss: join.with:" " map missing 'm -> ~"<|to :string m|>"
+            miss: missing | map 'm -> ~"<|to :string m|>"
+                          | join.with: " "
+
             label: \displayLabel pathSoFar
             print ~"|label|: missing required argument(s): |miss|"
             return ø
@@ -357,133 +381,132 @@ export module [
     ]
 
     ;---------------------------
-    ; Help rendering (private)
+    ; Template selection
     ;---------------------------
 
-    flagLabel: function [spec :option][
-        long: (spec\pred?)? -> ~"--|spec\cli|" -> ~"--|spec\name|=VALUE"
-        (not? null? spec\alias)? -> ~"-|spec\alias|, |long|"
-                                 -> ~"    |long|"
+    loadBundled: function [name :string][
+        do ~"to :|name|Template []"
     ]
 
-    renderOption: method [spec :option][
-        line: pad.right (\flagLabel spec) 28
-        line: line ++ spec\info
-        if not? null? spec\default [
-            d: to :string spec\default
-            line: line ++ ~" (default: |d|)"
-        ]
-        print "  " ++ line
+    pickTemplate: function [][
+        tplAttr: attr 'template
+        if null? tplAttr -> return \loadBundled "default"
+        name: to :string tplAttr
+        \loadBundled name
     ]
 
-    renderOptionsSection: method [title :string  specs :dictionary][
-        if not? empty? specs [
-            print title
-            loop specs [k s] -> \renderOption s
-            print ""
+    ;---------------------------
+    ; Data builders for templates
+    ;---------------------------
+
+    buildOptionEntries: function [specs :dictionary][
+        ret: []
+        loop specs [k s][!
+            long: (s\pred?)? -> "--" ++ s\cli -> "--" ++ s\name ++ "=VALUE"
+            flag: (null? s\alias)?
+                -> "    " ++ long
+                -> "-" ++ s\alias ++ ", " ++ long
+            entry: #[
+                flag:        flag
+                info:        s\info
+                default:     (null? s\default)? -> ø -> to :string s\default
+                isPredicate: s\pred?
+            ]
+            ret: append ret entry
         ]
+        return ret
     ]
+
+    buildSubcommandEntries: function [visible :dictionary][
+        ret: []
+        loop visible [name cmd][!
+            entry: #[
+                name:    name
+                info:    cmd\info
+                isGroup: not? null? cmd\subs
+            ]
+            ret: append ret entry
+        ]
+        return ret
+    ]
+
+    buildArgEntries: function [argBlock :block][
+        names: \extractArgNames argBlock
+        ret: []
+        loop names 'a [
+            ts: \argTypes argBlock a
+            entry: #[
+                name:     to :string a
+                required: not? in? :null ts
+            ]
+            ret: append ret entry
+        ]
+        return ret
+    ]
+
+    defaultMeta: function [commands :dictionary][
+        unless in? "default" keys commands -> 
+            return @[ø ø]
+        def: commands\default
+        @[\buildArgEntries def\args  \buildOptionEntries def\opts]
+    ]
+
+    ;---------------------------
+    ; Help rendering (delegates to template)
+    ;---------------------------
 
     renderHelp: method [globalSpec :dictionary  commands :dictionary][
         info: script
         appName: info\name ?? "app"
         appDesc: info\description ?? ""
 
-        print [appName "—" appDesc]
-        print ""
-
         visible: \visibleCommands commands
-        hasDefault?: in? "default" keys commands
+        defMeta: \defaultMeta commands
 
-        print "USAGE"
-        switch hasDefault? [
-            def: commands\default
-            argSig: join.with:" " map (\extractArgNames def\args) 'a [
-                s: to :string a
-                (in? :null \argTypes def\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
-            ]
-            (empty? visible)?
-                -> print ~"  |appName| [OPTIONS] |argSig|"
-                -> print ~"  |appName| [OPTIONS] (<command> [ARGS] | |argSig|)"
-        ][
-            print ~"  |appName| [OPTIONS] <command> [ARGS]"
+        data: #[
+            kind:           'root
+            appName:        appName
+            appDesc:        appDesc
+            globalOptions:  \buildOptionEntries globalSpec
+            subcommands:    \buildSubcommandEntries visible
+            defaultArgs:    defMeta\0
+            defaultOptions: defMeta\1
         ]
-        print ""
-
-        if hasDefault? [
-            def: commands\default
-            if not? empty? def\opts [
-                \renderOptionsSection "OPTIONS" def\opts
-            ]
-        ]
-
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
-
-        if not? empty? visible [
-            print "COMMANDS"
-            loop visible [name cmd] ->
-                print "  " ++ (pad.right name 12) ++ cmd\info
-            print ""
-        ]
-
-        if not? empty? visible ->
-            print ~"Run `|appName| <command> --help` for command-specific help."
+        tpl: \pickTemplate!
+        tpl\renderRoot data
     ]
 
     renderGroupHelp: method [pathSoFar :block  cmd :command  globalSpec :dictionary][
-        label: \displayLabel pathSoFar
         visible: \visibleCommands cmd\subs
-        hasDefault?: in? "default" keys cmd\subs
+        defMeta: \defaultMeta cmd\subs
 
-        print [label "—" cmd\info]
-        print ""
-
-        print "USAGE"
-        switch hasDefault? [
-            def: cmd\subs\default
-            argSig: join.with:" " map (\extractArgNames def\args) 'a [
-                s: to :string a
-                (in? :null \argTypes def\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
-            ]
-            (empty? visible)?
-                -> print ~"  |label| [OPTIONS] |argSig|"
-                -> print ~"  |label| [OPTIONS] (<command> [ARGS] | |argSig|)"
-        ][
-            print ~"  |label| [OPTIONS] <command> [ARGS]"
+        data: #[
+            kind:           'group
+            appName:        (script\name) ?? "app"
+            pathLabel:      \displayLabel pathSoFar
+            info:           cmd\info
+            options:        \buildOptionEntries cmd\opts
+            globalOptions:  \buildOptionEntries globalSpec
+            subcommands:    \buildSubcommandEntries visible
+            defaultArgs:    defMeta\0
+            defaultOptions: defMeta\1
         ]
-        print ""
-
-        \renderOptionsSection "OPTIONS"        cmd\opts
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
-
-        if not? empty? visible [
-            print "COMMANDS"
-            loop visible [name sub] ->
-                print "  " ++ (pad.right name 12) ++ sub\info
-            print ""
-        ]
-
-        if not? empty? visible ->
-            print ~"Run `|label| <command> --help` for command-specific help."
+        tpl: \pickTemplate!
+        tpl\renderGroup data
     ]
 
     renderCommandHelp: method [pathSoFar :block  cmd :command  globalSpec :dictionary][
-        label: \displayLabel pathSoFar
-
-        print [label "—" cmd\info]
-        print ""
-
-        argSig: join.with:" " map (\extractArgNames cmd\args) 'a [
-            s: to :string a
-            (in? :null \argTypes cmd\args a)? -> ~"[<|s|>]" -> ~"<|s|>"
+        data: #[
+            kind:           'command
+            appName:        script\name ?? "app"
+            pathLabel:      \displayLabel pathSoFar
+            info:           cmd\info
+            args:           \buildArgEntries cmd\args
+            options:        \buildOptionEntries cmd\opts
+            globalOptions:  \buildOptionEntries globalSpec
         ]
-
-        print "USAGE"
-        print ~"  |label| [OPTIONS] |argSig|"
-        print ""
-
-        \renderOptionsSection "OPTIONS"        cmd\opts
-        \renderOptionsSection "GLOBAL OPTIONS" globalSpec
+        tpl: \pickTemplate!
+        tpl\renderCommand data
     ]
 
     harvestCommands: function [decls :block][
@@ -507,10 +530,6 @@ export module [
         withBlock: (attr 'with) ?? []
         globalSpec: \parseOptionSpec withBlock
 
-        ;; `command` and `group` are only meaningful inside a `climax` decls
-        ;; block, so they live here as locals rather than as public exports.
-        ;; Arturo's `dictionary <decls>` resolves them via dynamic scope.
-
         command: function [desc :string  args :block  body :block][
             optSpec: \parseOptionSpec ((attr 'with) ?? [])
             to :command @[desc args optSpec body]!
@@ -529,7 +548,7 @@ export module [
         parsed: to :cli @[keys commands]!
 
         if parsed\version? [
-            print (script\version ?? "?")
+            print script\version ?? "?"
             return ø
         ]
 
@@ -539,27 +558,22 @@ export module [
             \renderHelp globalSpec commands
             return ø
         ]
+        
+        unless cmdName: <= parsed\command [
+            (hasDefault?) ? -> \dispatchNested commands\default [] parsed\params parsed globalSpec
+                            -> \renderHelp globalSpec commands
 
-        cmdName: parsed\command
-        if null? cmdName [
-            switch hasDefault? [
-                \dispatchNested commands\default [] parsed\params parsed globalSpec
-                return ø
-            ][
-                \renderHelp globalSpec commands
-                return ø
-            ]
+            return ø
         ]
 
-        if not? in? cmdName keys commands [
-            switch hasDefault? [
+        unless in? cmdName keys commands [
+            (hasDefault?) ? [
                 \dispatchNested commands\default [] parsed\params parsed globalSpec
-                return ø
             ][
                 print ~"climax: unknown command `|cmdName|`"
                 \renderHelp globalSpec commands
-                return ø
             ]
+            return ø
         ]
 
         \dispatchNested commands\[cmdName] @[cmdName] parsed\params parsed globalSpec

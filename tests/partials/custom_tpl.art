@@ -1,0 +1,12 @@
+;==========================================================
+; User-supplied template — proves user can define a custom
+; `:xxxTemplate` type and select it by literal name.
+;==========================================================
+
+define :customTemplate is :climaxTemplate [
+    renderRoot: method [data :dictionary][
+        print "::CUSTOM-TEMPLATE::"
+        print data\appName
+        print "::END::"
+    ]
+]

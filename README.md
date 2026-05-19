@@ -18,6 +18,7 @@
     - [Basic usage](#basic-usage)
     - [Nested subcommands](#nested-subcommands)
     - [Default action](#default-action)
+    - [Help templates](#help-templates)
 - [Function reference](#function-reference)
     - [`climax`](#climax)
     - [`command`](#command)
@@ -151,6 +152,43 @@ $ myapp restart   ;; runs restart
 
 Inside a `group`, a sibling `default:` works the same way: bare `myapp <group>` runs it, named sub-commands still dispatch. The `default` key is elided from rendered help listings.
 
+#### Help templates
+
+Help screens render through a swappable `:climaxTemplate` instance. Two templates ship in `src/templates/`:
+
+- `default` (used when no `.template:` attribute is supplied) — Arturo-style colourful output: bold green app name, bold cyan section headings, magenta flags & args, bold white sub-commands, gray dim hints.
+- `plain` — black-and-white, byte-identical to the pre-template output. Opt in for piping, CI logs, or anywhere ANSI is unwanted.
+
+```red
+climax .template: 'plain [
+    serve: command "..." [...] [...]
+]
+```
+
+Roll your own template by defining a `:xxxTemplate` type and selecting it with the matching literal. Import your template file before calling `climax`:
+
+```red
+;; my-tmpl.art
+define :myTemplate is :climaxTemplate [
+    styleApp:     method [s :string] -> color.bold #red s
+    styleSection: method [s :string] -> color.bold #yellow s
+]
+```
+
+```red
+;; your CLI
+import "climax"!
+import "./my-tmpl"!
+
+climax .template: 'my [
+    serve: command "..." [...] [...]
+]
+```
+
+`.template:` takes a literal `'name`; climax instantiates `to :nameTemplate []` internally. The bundled `'default` and `'plain` follow the same convention — no special-casing for user templates.
+
+The six style primitives — `styleApp`, `styleSection`, `styleFlag`, `styleArg`, `styleCommand`, `styleDim` — are the recommended override points. Override structural methods (`renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`) if you need to restructure rather than just recolour.
+
 ### Function reference
 
 #### `climax`
@@ -169,7 +207,8 @@ build and dispatch a CLI from the given declarations
 
 | Option | Type(s) | Description |
 |----|----|----|
-| with: | `:block` | global options (row grammar) |
+| with:     | `:block`   | global options (row grammar) |
+| template: | `:literal` | help template — `'default` (default), `'plain`, or the literal name of a user-defined `:xxxTemplate` already imported into scope |
 
 <hr/>
 

@@ -1,4 +1,4 @@
-import {unitt}!
+import'unitt!
 import ./"../src/climax.art"!
 
 commands: ["serve" "greet" "init"]

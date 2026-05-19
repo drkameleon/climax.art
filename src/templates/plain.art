@@ -1,0 +1,11 @@
+;==========================================================
+; climax template: 
+;   plain
+;
+; Black-and-white output. 
+; No colors, no formatting.
+;==========================================================
+
+import ./"base"!
+
+define :plainTemplate is :climaxTemplate []

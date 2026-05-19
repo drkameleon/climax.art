@@ -1,37 +1,45 @@
 ;===============================================
 ; End-to-end CLI tests
-;
-; Runs `tests/partials/app.art` as a real Arturo
-; subprocess and asserts on its stdout. This is what
-; you want if you actually want to know whether Climax
-; broke from a user's perspective.
 ;===============================================
 
-import {unitt}!
+import'unitt!
 
 ;---------------------------
 ; Helpers
 ;---------------------------
 
-artBin:     sys\binary
-fixture:    relative "./partials/app.art"
-flagsOnly:  relative "./partials/flagsonly.art"
-withDef:    relative "./partials/withdefault.art"
+fixture:    ./"./partials/app.art"
+flagsOnly:  ./"./partials/flagsonly.art"
+withDef:    ./"./partials/withdefault.art"
+plainApp:   ./"./partials/plain_app.art"
+customApp:  ./"./partials/custom_tpl_app.art"
 
 runApp: function [argLine :string][
-    cmd: ~{|artBin| "|fixture|" |argLine|}
+    cmd: ~{|sys\binary| "|fixture|" |argLine|}
     return strip execute cmd
 ]
 
 runFlagsOnly: function [argLine :string][
-    cmd: ~{|artBin| "|flagsOnly|" |argLine|}
+    cmd: ~{|sys\binary| "|flagsOnly|" |argLine|}
     return strip execute cmd
 ]
 
 runWithDefault: function [argLine :string][
-    cmd: ~{|artBin| "|withDef|" |argLine|}
+    cmd: ~{|sys\binary| "|withDef|" |argLine|}
     return strip execute cmd
 ]
+
+runPlain: function [argLine :string][
+    cmd: ~{|sys\binary| "|plainApp|" |argLine|}
+    return strip execute cmd
+]
+
+runCustom: function [argLine :string][
+    cmd: ~{|sys\binary| "|customApp|" |argLine|}
+    return strip execute cmd
+]
+
+esc: to :string to :char 27
 
 ;---------------------------
 ; Tests
@@ -276,6 +284,49 @@ suite "climax default: alongside named commands" [
         assert -> contains? out "COMMANDS"
         assert -> contains? out "add"
         assert -> not? contains? out "  default"
+    ]
+]
+
+suite "help templates" [
+
+    test "default template emits ANSI escapes" [
+        out: runApp "--help"
+        assert -> contains? out esc
+    ]
+
+    test "default template colours section headings" [
+        out: runApp "--help"
+        ;; bold cyan ANSI prefix
+        assert -> contains? out (esc ++ "[1;36m")
+    ]
+
+    test ".template: 'plain emits no ANSI escapes" [
+        out: runPlain "--help"
+        assert -> not? contains? out esc
+    ]
+
+    test ".template: 'plain still renders standard sections" [
+        out: runPlain "--help"
+        assert -> contains? out "USAGE"
+        assert -> contains? out "COMMANDS"
+        assert -> contains? out "hello"
+    ]
+
+    test ".template: 'plain body output unaffected" [
+        out: runPlain "hello alice"
+        assert -> out = "hello alice"
+    ]
+
+    test "user-defined template selected by literal name" [
+        out: runCustom "--help"
+        assert -> contains? out "::CUSTOM-TEMPLATE::"
+        assert -> contains? out "customapp"
+        assert -> contains? out "::END::"
+    ]
+
+    test "user-defined template doesn't disturb command dispatch" [
+        out: runCustom "hello"
+        assert -> out = "hi"
     ]
 ]
 
