@@ -339,6 +339,72 @@ suite ":cli" [
             valueOpts:  []
         ]
     ]
+
+    test "space-separated value: long flag" [
+        assert -> (to :dictionary to :cli .using: "serve --port 8080" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080]
+            params:     []
+            rest:       []
+            valueOpts:  ["port"]
+        ]
+    ]
+
+    test "space-separated value: short flag" [
+        assert -> (to :dictionary to :cli .using: "serve -p 9000" .valueOpts: ["port" "p"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[p: 9000]
+            params:     []
+            rest:       []
+            valueOpts:  ["port" "p"]
+        ]
+    ]
+
+    test "space-separated value: string value preserved" [
+        assert -> (to :dictionary to :cli .using: "serve --host localhost app.conf" .valueOpts: ["host"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[host: "localhost"]
+            params:     ["app.conf"]
+            rest:       []
+            valueOpts:  ["host"]
+        ]
+    ]
+
+    test "space-separated: flag not in valueOpts stays boolean" [
+        assert -> (to :dictionary to :cli .using: "serve --dry-run app.conf" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #["dry-run": true]
+            params:     ["app.conf"]
+            rest:       []
+            valueOpts:  ["port"]
+        ]
+    ]
+
+    test "space-separated: don't consume the next flag as a value" [
+        assert -> (to :dictionary to :cli .using: "serve --port --verbose" .valueOpts: ["port" "verbose"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: true verbose: true]
+            params:     []
+            rest:       []
+            valueOpts:  ["port" "verbose"]
+        ]
+    ]
+
+    test "space-separated: trailing bare flag stays boolean" [
+        assert -> (to :dictionary to :cli .using: "serve --port" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: true]
+            params:     []
+            rest:       []
+            valueOpts:  ["port"]
+        ]
+    ]
 ]
 
 unitt\report 'full
