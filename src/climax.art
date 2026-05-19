@@ -121,7 +121,7 @@ define :cli [
                 "--" [
                     i: i + 1
                     while [i < size tokens][
-                        \rest: append \rest tokens\[i]
+                        \rest: \rest ++ tokens\[i]
                         i: i + 1
                     ]
                 ]
@@ -129,9 +129,10 @@ define :cli [
                     (and? [prefix? token "-"][token <> "-"])? [
                         flag: \parseFlag token
                         val: flag\value
-                        if string? val [
-                            if numeric? val -> val: to :integer val
-                        ]
+                        
+                        if and? [string? val][numeric? val] ->
+                            val: to :integer val
+
                         (foundCommand?)?
                             -> \options\[flag\name]: val
                             -> \globals\[flag\name]: val
@@ -142,7 +143,7 @@ define :cli [
                         ]
                         if or? [foundCommand?][not? in? token knownCommands] ->
                             if token <> \command ->
-                                \params: append \params token
+                                \params: \params ++ token
                     ]
                 ]
             ]
@@ -179,50 +180,60 @@ export module [
         loop items 'tok [
             case type tok [
                 :word [
-                    if not? null? cur [ specs\[cur\name]: cur ]
+                    unless null? cur -> 
+                        specs\[cur\name]: cur
                     cur: to :option @[to :string tok]!
                     sawType: cur\pred?
                 ]
                 :literal [
-                    if not? null? cur -> cur\alias: to :string tok
+                    unless null? cur -> 
+                        cur\alias: to :string tok
                 ]
                 :type [
-                    if not? null? cur [
+                    unless null? cur [
                         cur\types: append cur\types tok
                         sawType: true
                     ]
                 ]
                 :string [
-                    if not? null? cur [
+                    unless null? cur [
                         if and? [not? sawType][null? cur\default] -> cur\default: tok
                         if and? [sawType][empty? cur\info]        -> cur\info: tok
                     ]
                 ]
                 any [
-                    if not? null? cur [
-                        if null? cur\default -> cur\default: tok
-                    ]
+                    unless null? cur ->
+                        if null? cur\default -> 
+                            cur\default: tok
                 ]
             ]
         ]
 
-        if not? null? cur -> specs\[cur\name]: cur
+        unless null? cur -> 
+            specs\[cur\name]: cur
+
         return specs
     ]
 
     coerceValue: function [val  types :block][
         if empty? types -> return val
-        if not? string? val [
-            loop types 't [
-                if is? t val -> return val
-            ]
+        unless string? val [
+            loop types 't ->
+                if is? t val -> 
+                    return val
+
             return val
         ]
         loop types 't [
-            if t = :string -> return val
+            if t = :string -> 
+                return val
+
             converted: ø
-            try [ converted: to t val ]
-            if not? null? converted -> return converted
+
+            try -> converted: to t val
+
+            unless null? converted -> 
+                return converted
         ]
         return val
     ]
@@ -235,21 +246,22 @@ export module [
         seen?: false
         done?: false
         loop argBlock 'tok [
-            if not? done? [
+            unless done? [
                 if word? tok [
                     if and? [seen?][tok <> argName] -> done?: true
                     if tok = argName -> seen?: true
                 ]
-                if and? [seen?][:type = type tok] -> 'ret ++ tok
+                if and? [seen?][:type = type tok] -> 
+                    'ret ++ tok
             ]
         ]
         return ret
     ]
 
     resolveOpt: method [spec :option  provided][
-        if not? null? provided     -> return \coerceValue provided spec\types
-        if not? null? spec\default -> return spec\default
-        if spec\pred?              -> return false
+        unless null? provided     -> return \coerceValue provided spec\types
+        unless null? spec\default -> return spec\default
+        if spec\pred?             -> return false
         return ø
     ]
 
@@ -261,9 +273,11 @@ export module [
 
         loop @[globalSpec cmdOpts] 'specs [
             loop specs [name s][!
-                v: \resolveOpt s (s\fetchFrom mergedSrc)
+                v: \resolveOpt s s\fetchFrom mergedSrc
                 ret\[name]: v
-                if not? null? s\alias -> ret\[s\alias]: v
+
+                unless null? s\alias -> 
+                    ret\[s\alias]: v
             ]
         ]
         return ret
@@ -275,8 +289,10 @@ export module [
 
         values: []
         loop.with:'i names 'argName [
-            val: (i < size params)? -> params\[i] -> ø
-            if not? null? val [
+            val: (i < size params)? -> params\[i] 
+                                    -> ø
+
+            unless null? val [
                 ts: \argTypes cmd\args argName
                 val: \coerceValue val ts
             ]
@@ -287,7 +303,7 @@ export module [
     ]
 
     displayLabel: function [pathSoFar :block][
-        appName: (script\name) ?? "app"
+        appName: script\name ?? "app"
 
         unless empty? pathSoFar -> 
             'appName ++ " " ++ join.with:" " pathSoFar
@@ -429,7 +445,8 @@ export module [
     ]
 
     defaultMeta: function [commands :dictionary][
-        if not? in? "default" keys commands -> return @[ø ø]
+        unless in? "default" keys commands -> 
+            return @[ø ø]
         def: commands\default
         @[\buildArgEntries def\args  \buildOptionEntries def\opts]
     ]
@@ -481,7 +498,7 @@ export module [
     renderCommandHelp: method [pathSoFar :block  cmd :command  globalSpec :dictionary][
         data: #[
             kind:           'command
-            appName:        (script\name) ?? "app"
+            appName:        script\name ?? "app"
             pathLabel:      \displayLabel pathSoFar
             info:           cmd\info
             args:           \buildArgEntries cmd\args
@@ -531,7 +548,7 @@ export module [
         parsed: to :cli @[keys commands]!
 
         if parsed\version? [
-            print (script\version ?? "?")
+            print script\version ?? "?"
             return ø
         ]
 
