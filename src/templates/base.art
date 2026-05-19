@@ -54,8 +54,14 @@ define :climaxTemplate [
     ]
 
     optionLine: method [entry :dictionary][
-        line: pad.right (\styleFlag entry\flag) \flagColWidth
-        line: line ++ entry\info
+        ;; Pad based on the UNSTYLED flag width — styled strings carry
+        ;; ANSI overhead that confuses byte-counted padding. When the
+        ;; flag overflows the column, fall back to a single space so
+        ;; description never butts up against it.
+        raw:    entry\flag
+        gap:    ((size raw) >= \flagColWidth)? -> " "
+                                              -> repeat " " (\flagColWidth - size raw)
+        line:   (\styleFlag raw) ++ gap ++ entry\info
         unless null? entry\default [
             line: line ++ \styleDim \defaultLabel entry\default
         ]
