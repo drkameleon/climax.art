@@ -41,6 +41,8 @@ define :climaxTemplate [
     tipText: method [label :string] ->
         ~"Run `|label| <command> --help` for command-specific help."
 
+    titleSeparator: method [] -> "—"
+
     ;---------------------------
     ; Structural pieces
     ;---------------------------
@@ -102,7 +104,7 @@ define :climaxTemplate [
     ;---------------------------
 
     renderRoot: method [data :dictionary][
-        print [\styleApp data\appName "—" data\appDesc]
+        print [\styleApp data\appName \titleSeparator data\appDesc]
         print ""
 
         print \styleSection \headerUsage
@@ -124,7 +126,7 @@ define :climaxTemplate [
     renderGroup: method [data :dictionary][
         label: data\pathLabel
 
-        print [\styleApp label "—" data\info]
+        print [\styleApp label \titleSeparator data\info]
         print ""
 
         print \styleSection \headerUsage
@@ -145,7 +147,7 @@ define :climaxTemplate [
         label: data\pathLabel
         sig:   \argSig data\args
 
-        print [\styleApp label "—" data\info]
+        print [\styleApp label \titleSeparator data\info]
         print ""
 
         print \styleSection \headerUsage
