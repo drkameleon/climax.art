@@ -442,6 +442,78 @@ suite ":cli" [
             predicateAliases: []
         ]
     ]
+
+    test "bundled short bools: split into individual flags" [
+        assert -> (to :dictionary to :cli .using: "-vd" .predicateAliases: ["v" "d"] @[commands]) = #[
+            globals:    #[v: true d: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: ["v" "d"]
+        ]
+    ]
+
+    test "bundled short bools: post-command, three flags" [
+        assert -> (to :dictionary to :cli .using: "serve -vdx" .predicateAliases: ["v" "d" "x"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[v: true d: true x: true]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: ["v" "d" "x"]
+        ]
+    ]
+
+    test "bundled short bools: one char not in set falls back" [
+        assert -> (to :dictionary to :cli .using: "-vz" .predicateAliases: ["v"] @[commands]) = #[
+            globals:    #[vz: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: ["v"]
+        ]
+    ]
+
+    test "bundled short bools: empty predicateAliases leaves token alone" [
+        assert -> (to :dictionary to :cli .using: "-vd" @[commands]) = #[
+            globals:    #[vd: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: []
+        ]
+    ]
+
+    test "bundled short bools: don't touch long flags" [
+        assert -> (to :dictionary to :cli .using: "--vd" .predicateAliases: ["v" "d"] @[commands]) = #[
+            globals:    #[vd: true]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: ["v" "d"]
+        ]
+    ]
+
+    test "bundled short bools: token with = is not bundled" [
+        assert -> (to :dictionary to :cli .using: "-vd=x" .predicateAliases: ["v" "d"] @[commands]) = #[
+            globals:    #[vd: "x"]
+            command:    null
+            options:    #[]
+            params:     []
+            rest:       []
+            valueOpts:  []
+            predicateAliases: ["v" "d"]
+        ]
+    ]
 ]
 
 unitt\report 'full
