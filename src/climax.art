@@ -516,10 +516,6 @@ export module [
         withBlock: (attr 'with) ?? []
         globalSpec: \parseOptionSpec withBlock
 
-        ;; `command` and `group` are only meaningful inside a `climax` decls
-        ;; block, so they live here as locals rather than as public exports.
-        ;; Arturo's `dictionary <decls>` resolves them via dynamic scope.
-
         command: function [desc :string  args :block  body :block][
             optSpec: \parseOptionSpec ((attr 'with) ?? [])
             to :command @[desc args optSpec body]!
