@@ -187,7 +187,45 @@ climax .template: 'my [
 
 `.template:` takes a literal `'name`; climax instantiates `to :nameTemplate []` internally. The bundled `'default` and `'plain` follow the same convention — no special-casing for user templates.
 
-The six style primitives — `styleApp`, `styleSection`, `styleFlag`, `styleArg`, `styleCommand`, `styleDim` — are the recommended override points. Override structural methods (`renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`) if you need to restructure rather than just recolour.
+Override points are layered so you only touch what you care about:
+
+**Style primitives** — wrap a string in colour/bold/etc:
+
+| Method | Wraps |
+|---|---|
+| `styleApp` | app name & path label in titles + USAGE |
+| `styleSection` | section headings |
+| `styleFlag` | option flag labels |
+| `styleArg` | positional arg placeholders (`<name>` / `[<name>]`) |
+| `styleCommand` | sub-command names in COMMANDS list |
+| `styleDim` | tip footer & `(default: …)` suffix |
+
+**Layout primitives** — constants that drive spacing:
+
+| Method | Default |
+|---|---|
+| `indent` | `"    "` (4 spaces) |
+| `flagColWidth` | `28` |
+| `commandColWidth` | `12` |
+
+**Section titles** — overridable for translation or renaming:
+
+| Method | Default |
+|---|---|
+| `headerUsage` | `"USAGE"` |
+| `headerOptions` | `"OPTIONS"` |
+| `headerGlobalOptions` | `"GLOBAL OPTIONS"` |
+| `headerCommands` | `"COMMANDS"` |
+
+**Inline strings** — small text bits:
+
+| Method | Default |
+|---|---|
+| `titleSeparator` | `"—"` (between name and description in titles) |
+| `defaultLabel val` | `" (default: <val>)"` |
+| `tipText label` | `"Run `<label> <command> --help` for command-specific help."` — return `""` to suppress the footer |
+
+**Structural methods** — restructure rather than recolour: `renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`.
 
 ### Function reference
 
