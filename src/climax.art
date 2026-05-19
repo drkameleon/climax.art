@@ -548,27 +548,22 @@ export module [
             \renderHelp globalSpec commands
             return ø
         ]
+        
+        unless cmdName: <= parsed\command [
+            (hasDefault?) ? -> \dispatchNested commands\default [] parsed\params parsed globalSpec
+                            -> \renderHelp globalSpec commands
 
-        cmdName: parsed\command
-        if null? cmdName [
-            switch hasDefault? [
-                \dispatchNested commands\default [] parsed\params parsed globalSpec
-                return ø
-            ][
-                \renderHelp globalSpec commands
-                return ø
-            ]
+            return ø
         ]
 
-        if not? in? cmdName keys commands [
-            switch hasDefault? [
+        unless in? cmdName keys commands [
+            (hasDefault?) ? [
                 \dispatchNested commands\default [] parsed\params parsed globalSpec
-                return ø
             ][
                 print ~"climax: unknown command `|cmdName|`"
                 \renderHelp globalSpec commands
-                return ø
             ]
+            return ø
         ]
 
         \dispatchNested commands\[cmdName] @[cmdName] parsed\params parsed globalSpec
