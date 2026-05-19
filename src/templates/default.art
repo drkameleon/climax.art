@@ -1,17 +1,10 @@
 ;==========================================================
-; climax template: default
+; climax template: 
+;   default
 ;
 ; Arturo-style colourful help screens. Inherits all the
 ; structural rendering from `:climaxTemplate` and overrides
 ; only the style primitives.
-;
-; Palette (matches `arturo --help`):
-;   app name        bold green
-;   section labels  bold cyan
-;   flags           magenta
-;   args            magenta
-;   sub-commands    bold white
-;   dim text        gray
 ;==========================================================
 
 import ./"base"!

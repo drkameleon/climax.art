@@ -1,15 +1,8 @@
 ;==========================================================
-; climax base template type
-;
-; Defines `:climaxTemplate` — a plain-text help renderer.
-; Other templates inherit via `define :foo is :climaxTemplate
-; [...]` and override the style primitives (or any structural
-; method) to change presentation.
+; Base template type
 ;==========================================================
 
 define :climaxTemplate [
-    init: method [][]
-
     ;---------------------------
     ; Style primitives — identity by default; override in a
     ; subtype to add colour, bold, etc.
@@ -36,7 +29,7 @@ define :climaxTemplate [
     optionLine: method [entry :dictionary][
         line: pad.right (\styleFlag entry\flag) 28
         line: line ++ entry\info
-        if not? null? entry\default [
+        unless null? entry\default [
             d: entry\default
             line: line ++ \styleDim ~" (default: |d|)"
         ]
@@ -44,15 +37,16 @@ define :climaxTemplate [
     ]
 
     optionsSection: method [title :string  entries :block][
-        if not? empty? entries [
+        unless empty? entries [
             print \styleSection title
-            loop entries 'e -> \optionLine e
+            loop entries 'e -> 
+                \optionLine e
             print ""
         ]
     ]
 
     subcommandList: method [subs :block][
-        if not? empty? subs [
+        unless empty? subs [
             print \styleSection "COMMANDS"
             loop subs 'e [
                 name: \styleCommand pad.right e\name 12
@@ -69,11 +63,8 @@ define :climaxTemplate [
 
         (hasDefault?)? [
             sig: \argSig data\defaultArgs
-            switch hasSubs? [
-                print ~"  |styledLabel| [OPTIONS] (<command> [ARGS] | |sig|)"
-            ][
-                print ~"  |styledLabel| [OPTIONS] |sig|"
-            ]
+            print (hasSubs?)? -> ~"  |styledLabel| [OPTIONS] (<command> [ARGS] | |sig|)"
+                              -> ~"  |styledLabel| [OPTIONS] |sig|"
         ][
             print ~"  |styledLabel| [OPTIONS] <command> [ARGS]"
         ]
@@ -91,13 +82,13 @@ define :climaxTemplate [
         \usageLine data\appName data
         print ""
 
-        if not? null? data\defaultOptions ->
+        unless null? data\defaultOptions ->
             \optionsSection "OPTIONS" data\defaultOptions
 
         \optionsSection "GLOBAL OPTIONS" data\globalOptions
         \subcommandList data\subcommands
 
-        if not? empty? data\subcommands [
+        unless empty? data\subcommands [
             tip: ~"Run `|data\appName| <command> --help` for command-specific help."
             print \styleDim tip
         ]
@@ -117,7 +108,7 @@ define :climaxTemplate [
         \optionsSection "GLOBAL OPTIONS" data\globalOptions
         \subcommandList data\subcommands
 
-        if not? empty? data\subcommands [
+        unless empty? data\subcommands [
             tip: ~"Run `|label| <command> --help` for command-specific help."
             print \styleDim tip
         ]

@@ -1,9 +1,9 @@
 ;==========================================================
-; climax template: plain
+; climax template: 
+;   plain
 ;
-; Black-and-white output. Inherits everything from
-; `:climaxTemplate` (the base type's style primitives are
-; identity, so output is plain text).
+; Black-and-white output. 
+; No colors, no formatting.
 ;==========================================================
 
 import ./"base"!
