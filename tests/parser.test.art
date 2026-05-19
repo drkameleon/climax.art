@@ -13,6 +13,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -24,6 +25,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
 
         assert -> (to :dictionary to :cli .using: "init" @[commands]) = #[
@@ -33,6 +35,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -44,6 +47,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -55,6 +59,7 @@ suite ":cli" [
             params:     ["app.conf"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -66,6 +71,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -77,6 +83,7 @@ suite ":cli" [
             params:     ["John" "Doe"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
 
         assert -> (to :dictionary to :cli .using: "init --bare myproject" @[commands]) = #[
@@ -86,6 +93,7 @@ suite ":cli" [
             params:     ["myproject"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -97,6 +105,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -108,6 +117,7 @@ suite ":cli" [
             params:     ["app.conf"]
             rest:       ["--raw-thing" "-x" "foo"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -119,6 +129,7 @@ suite ":cli" [
             params:     []
             rest:       ["--foo" "--" "--bar"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -130,6 +141,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -141,6 +153,7 @@ suite ":cli" [
             params:     []
             rest:       ["--foo" "--bar" "baz"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -152,6 +165,7 @@ suite ":cli" [
             params:     ["myproject"]
             rest:       ["--template=basic"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -163,6 +177,7 @@ suite ":cli" [
             params:     []
             rest:       ["surplus"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -174,6 +189,7 @@ suite ":cli" [
             params:     []
             rest:       ["leftover"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -185,6 +201,7 @@ suite ":cli" [
             params:     []
             rest:       ["--leftover"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -196,6 +213,7 @@ suite ":cli" [
             params:     ["somefile.txt"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -207,6 +225,7 @@ suite ":cli" [
             params:     ["unknown-thing" "file1.txt" "file2.txt"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -218,6 +237,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -229,6 +249,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -240,6 +261,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -251,6 +273,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -262,6 +285,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
 
         assert -> (to :dictionary to :cli .using: "serve --name= file.txt" @[commands]) = #[
@@ -271,6 +295,7 @@ suite ":cli" [
             params:     ["file.txt"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -282,6 +307,7 @@ suite ":cli" [
             params:     ["file1.txt" "file2.txt" "file3.txt"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -293,6 +319,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -304,6 +331,7 @@ suite ":cli" [
             params:     ["-" "input.txt"]
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -315,6 +343,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -326,6 +355,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -337,6 +367,7 @@ suite ":cli" [
             params:     ["app.conf" "keys.pem"]
             rest:       ["--extra1" "--extra2" "val"]
             valueOpts:  []
+            predicateAliases: []
         ]
     ]
 
@@ -348,6 +379,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  ["port"]
+            predicateAliases: []
         ]
     ]
 
@@ -359,6 +391,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  ["port" "p"]
+            predicateAliases: []
         ]
     ]
 
@@ -370,6 +403,7 @@ suite ":cli" [
             params:     ["app.conf"]
             rest:       []
             valueOpts:  ["host"]
+            predicateAliases: []
         ]
     ]
 
@@ -381,6 +415,7 @@ suite ":cli" [
             params:     ["app.conf"]
             rest:       []
             valueOpts:  ["port"]
+            predicateAliases: []
         ]
     ]
 
@@ -392,6 +427,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  ["port" "verbose"]
+            predicateAliases: []
         ]
     ]
 
@@ -403,6 +439,7 @@ suite ":cli" [
             params:     []
             rest:       []
             valueOpts:  ["port"]
+            predicateAliases: []
         ]
     ]
 ]
