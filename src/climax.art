@@ -286,10 +286,6 @@ export module [
         cmd\run opts rest names values
     ]
 
-    mergeSpecs: function [a :dictionary  b :dictionary][
-        extend a b
-    ]
-
     displayLabel: function [pathSoFar :block][
         appName: (script\name) ?? "app"
 
@@ -309,7 +305,7 @@ export module [
 
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
         unless null? cmd\subs [
-            nextGlobals: \mergeSpecs globalSpec cmd\opts
+            nextGlobals: extend globalSpec cmd\opts
 
             unless empty? params [
                 nextName: params\0
