@@ -16,6 +16,7 @@
 - [What does this package do?](#what-does-this-package-do)
 - [How do I use it?](#how-do-i-use-it)
     - [Basic usage](#basic-usage)
+    - [Flag forms](#flag-forms)
     - [Nested subcommands](#nested-subcommands)
     - [Default action](#default-action)
     - [Help templates](#help-templates)
@@ -33,25 +34,27 @@
 
 ### What does this package do?
 
-This package exposes a single public entry point (`climax`) and two builders, `command` and `group`, that can be accessed from the main block. 
+Single entry point: `climax`. Inside its block, `command` and `group` declare leaf commands and nested groups.
 
-Every CLI you build with it automatically gets:
+Every CLI you build with it gets:
 
 - subcommand dispatch (arbitrarily nested via `group`)
 - typed positional arguments
-- typed options with aliases, defaults & descriptions
+- typed options with aliases, defaults, descriptions
 - persistent (inherited) group-level options
 - a `default:` command that runs when no sub-command is typed
-- `--help` / `--version` for free (read straight from the script metadata)
+- `--help` / `--version` from the script metadata
 - `--` rest-args passthrough
+- strict rejection of unknown flags and extra positionals
+- coloured help and errors via a pluggable template
 
-The whole DSL is built on top of three first-class types: `:option`, `:command` and `:cli`.
+The DSL is built on three first-class types: `:option`, `:command`, `:cli`.
 
 ### How do I use it?
 
 #### Basic usage
 
-Simply `import` it, declare your commands and pass them to `climax`:
+Import it, declare your commands, pass them to `climax`:
 
 ```red
 ;; name: webforge
@@ -83,20 +86,25 @@ Then:
 ```sh
 $ webforge --help
 $ webforge serve --help
-$ webforge serve mysite --watch -p:9000
-$ webforge serve mysite --watch -p 9000     ;; space-separated value works too
-$ webforge serve mysite --watch -p=9000     ;; so does `=`
+$ webforge serve mysite --watch -p 9000
 $ webforge -v build mysite
 ```
 
 > [!TIP]
 > Trailing `?` on an option name turns it into a boolean switch. Type defaults to `:logical`, default value to `false`.
 
-> [!NOTE]
-> Accepted flag-value forms: `--name VALUE`, `--name:VALUE`, `--name=VALUE`, and the same with short aliases. Bundled short booleans work too: `-xvf` ≡ `-x -v -f` whenever every char is a registered single-char predicate alias.
+#### Flag forms
 
-> [!IMPORTANT]
-> Unknown flags and extra positionals are rejected before dispatch. Typos like `--time` (for `--times`) error out instead of silently doing nothing. Tokens after `--` still escape into `rest` unchanged.
+Climax accepts the conventions you'd expect from any POSIX-style CLI:
+
+| Form | Example |
+|---|---|
+| space | `--port 8080`, `-p 8080` |
+| colon | `--port:8080`, `-p:8080` |
+| equals | `--port=8080`, `-p=8080` |
+| bundled bools | `-xvf` ≡ `-x -v -f` (when every char is a registered single-char predicate alias) |
+
+Unknown flags and extra positionals are rejected before dispatch, so typos like `--time` (for `--times`) error out instead of silently doing nothing. Anything after `--` escapes into `rest` unchanged.
 
 #### Nested subcommands
 
@@ -123,11 +131,11 @@ $ myapp remote add origin https://example
 $ myapp remote --loud add origin https://example   ;; persistent flag
 ```
 
-Group-level options declared via `.with:` are inherited by every descendant; they can be passed anywhere on the command line and remain visible inside each leaf's `opts` dict. Groups can nest arbitrarily (groups of groups).
+Group-level options declared via `.with:` are inherited by every descendant. They can be passed anywhere on the command line and stay visible in each leaf's `opts` dict. Groups nest arbitrarily.
 
 #### Default action
 
-Use the reserved key `default:` to declare a command that runs when no recognised sub-command is typed. It can stand alone (flag-only CLI):
+The reserved key `default:` declares a command that runs when no recognised sub-command is typed. Standalone (flag-only CLI):
 
 ```red
 ;; name: ping
@@ -144,7 +152,7 @@ climax [
 $ ping example.com -c 3
 ```
 
-Or sit alongside named commands as a fallback:
+Or alongside named commands as a fallback:
 
 ```red
 climax [
@@ -158,14 +166,14 @@ $ myapp           ;; runs default
 $ myapp restart   ;; runs restart
 ```
 
-Inside a `group`, a sibling `default:` works the same way: bare `myapp <group>` runs it, named sub-commands still dispatch. The `default` key is elided from rendered help listings.
+Inside a `group`, a sibling `default:` works the same way. The `default` key is elided from rendered help listings.
 
 #### Help templates
 
-Help screens render through a swappable `:climaxTemplate` instance. Two templates ship in `src/templates/`:
+Two templates ship in `src/templates/`:
 
-- `default` (used when no `.template:` attribute is supplied) — Arturo-style colourful output: bold green app name, bold cyan section headings, magenta flags & args, bold white sub-commands, gray dim hints.
-- `plain` — black-and-white, byte-identical to the pre-template output. Opt in for piping, CI logs, or anywhere ANSI is unwanted.
+- `default`: colourful Arturo-style output. Used unless `.template:` says otherwise.
+- `plain`: black-and-white, no ANSI escapes. Good for piping and CI logs.
 
 ```red
 climax .template: 'plain [
@@ -173,7 +181,7 @@ climax .template: 'plain [
 ]
 ```
 
-Roll your own template by defining a `:xxxTemplate` type and selecting it with the matching literal. Import your template file before calling `climax`:
+To roll your own, define `:xxxTemplate is :climaxTemplate`, import it before calling `climax`, and select with `.template: 'xxx`:
 
 ```red
 ;; my-tmpl.art
@@ -188,28 +196,24 @@ define :myTemplate is :climaxTemplate [
 import "climax"!
 import "./my-tmpl"!
 
-climax .template: 'my [
-    serve: command "..." [...] [...]
-]
+climax .template: 'my [ serve: command "..." [...] [...] ]
 ```
 
-`.template:` takes a literal `'name`; climax instantiates `to :nameTemplate []` internally. The bundled `'default` and `'plain` follow the same convention — no special-casing for user templates.
+Override points are layered so you touch only what you need:
 
-Override points are layered so you only touch what you care about:
-
-**Style primitives** — wrap a string in colour/bold/etc:
+**Style primitives** (wrap a string with colour/bold/etc):
 
 | Method | Wraps |
 |---|---|
-| `styleApp` | app name & path label in titles + USAGE |
+| `styleApp` | app name, path label in titles + USAGE |
 | `styleSection` | section headings |
 | `styleFlag` | option flag labels |
 | `styleArg` | positional arg placeholders (`<name>` / `[<name>]`) |
 | `styleCommand` | sub-command names in COMMANDS list |
-| `styleDim` | tip footer & `(default: …)` suffix |
+| `styleDim` | tip footer, `(default: ...)` suffix |
 | `styleError` | error-message prefix (`Error:`) |
 
-**Layout primitives** — constants that drive spacing:
+**Layout** (constants that drive spacing):
 
 | Method | Default |
 |---|---|
@@ -217,7 +221,7 @@ Override points are layered so you only touch what you care about:
 | `flagColWidth` | `28` |
 | `commandColWidth` | `12` |
 
-**Section titles** — overridable for translation or renaming:
+**Section titles** (override to translate or rename):
 
 | Method | Default |
 |---|---|
@@ -226,15 +230,15 @@ Override points are layered so you only touch what you care about:
 | `headerGlobalOptions` | `"GLOBAL OPTIONS"` |
 | `headerCommands` | `"COMMANDS"` |
 
-**Inline strings** — small text bits:
+**Inline strings**:
 
 | Method | Default |
 |---|---|
 | `titleSeparator` | `"—"` (between name and description in titles) |
 | `defaultLabel val` | `" (default: <val>)"` |
-| `tipText label` | `"Run `<label> <command> --help` for command-specific help."` — return `""` to suppress the footer |
+| `tipText label` | `"Run `<label> <command> --help` for command-specific help."` (return `""` to drop the line) |
 
-**Error rendering** — overridable per error type. Default template wraps each in a two-line block with bold-red `Error:` prefix; plain template inherits a single-line format.
+**Error rendering** (one method per error class):
 
 | Method | When |
 |---|---|
@@ -244,33 +248,27 @@ Override points are layered so you only touch what you care about:
 | `renderTooManyArgs label got max` | more positional args than declared |
 | `renderMissingRequired label missing` | required positional omitted |
 
-**Structural methods** — restructure rather than recolour: `renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`.
+**Structural methods** (restructure rather than recolour): `renderRoot`, `renderGroup`, `renderCommand`, `argSig`, `optionLine`, `optionsSection`, `subcommandList`, `usageLine`.
 
 ### Function reference
 
 #### `climax`
 
-##### Description
-
-build and dispatch a CLI from the given declarations
-
-##### Usage
+Build and dispatch a CLI from the given declarations.
 
 <pre>
 <b>climax</b> <ins>decls</ins> <i>:block</i>
 </pre>
 
-##### Attributes
-
-| Option | Type(s) | Description |
+| Attribute | Type(s) | Description |
 |----|----|----|
-| with:     | `:block`   | global options (row grammar) |
-| template: | `:literal` | help template — `'default` (default), `'plain`, or the literal name of a user-defined `:xxxTemplate` already imported into scope |
+| `with:` | `:block` | global options (row grammar) |
+| `template:` | `:literal` | help template: `'default`, `'plain`, or the literal name of any `:xxxTemplate` already in scope |
 
 <hr/>
 
 > [!NOTE]
-> `command` and `group` are not module-level exports; they only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else will result in an error.
+> `command` and `group` are not module-level exports. They only exist as locals inside a `climax` decls block (and recursively inside any `group`'s sub-block). Calling them from anywhere else is an error.
 
 #### `command`
 
@@ -280,9 +278,9 @@ Builds a leaf command spec.
 <b>command</b> <ins>desc</ins> <i>:string</i> <ins>args</ins> <i>:block</i> <ins>body</ins> <i>:block</i>
 </pre>
 
-| Option | Type(s) | Description |
+| Attribute | Type(s) | Description |
 |----|----|----|
-| with: | `:block` | options block (row grammar) |
+| `with:` | `:block` | options block (row grammar) |
 
 Returns `:command`.
 
@@ -296,17 +294,17 @@ Builds a command group whose body is a block of sub-command declarations.
 <b>group</b> <ins>desc</ins> <i>:string</i> <ins>decls</ins> <i>:block</i>
 </pre>
 
-| Option | Type(s) | Description |
+| Attribute | Type(s) | Description |
 |----|----|----|
-| with: | `:block` | group-level options (persistent / inherited by sub-commands) |
+| `with:` | `:block` | group-level options (persistent: inherited by sub-commands) |
 
-Returns `:command` (with sub-commands attached).
+Returns `:command` with sub-commands attached.
 
 <hr/>
 
 #### Declaring options
 
-Inside any `.with:` block, each option follows the same forced order:
+Inside any `.with:` block, each option row follows a forced order:
 
 ```
 <name>[?]  ['alias]  [<default>]  [:type ...]  ["description"]
@@ -315,8 +313,8 @@ Inside any `.with:` block, each option follows the same forced order:
 | Slot | Required? | Notes |
 |----|----|----|
 | `name` | yes | trailing `?` marks a predicate (boolean switch) |
-| `alias` | no | quoted single-char literal, e.g. `'v` |
-| `default` | no | any literal value; predicates always default to `false` |
+| `alias` | no | quoted single-char literal (e.g. `'v`) |
+| `default` | no | any literal; predicates always default to `false` |
 | `type` | no | one or more `:type` literals (union); predicates infer `:logical` |
 | `description` | no | trailing `:string` |
 
