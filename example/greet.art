@@ -1,0 +1,42 @@
+;===============================================
+; greet.art
+;
+; Smallest meaningful Climax CLI: two commands,
+; one global flag, one option with default.
+;
+; Try:
+;   arturo example/greet.art --help
+;   arturo example/greet.art hello
+;   arturo example/greet.art hello alice
+;   arturo example/greet.art -l hello alice -n 3
+;   arturo example/greet.art add 3 4
+;===============================================
+
+;; name: greet
+;; description: « greeter CLI built with climax
+;; version: 1.0.0
+
+import ./"../src/climax.art"!
+
+climax .with: [
+    loud? 'l "shout instead of speak"
+] [
+    hello: command "say hello to someone" [
+        who :string :null
+    ] .with: [
+        times 'n 1 :integer "how many times"
+    ][
+        name: who ?? "world"
+        msg:  "hello " ++ name
+        if opts\loud? -> msg: upper msg
+
+        loop 1..opts\times 'i -> print msg
+    ]
+
+    add: command "sum two numbers" [
+        a :integer
+        b :integer
+    ][
+        print a + b
+    ]
+]
