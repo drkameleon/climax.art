@@ -25,6 +25,15 @@ define :climaxTemplate [
     commandColWidth: method [] -> 12
 
     ;---------------------------
+    ; Section titles — override to translate or rename.
+    ;---------------------------
+
+    headerUsage:         method [] -> "USAGE"
+    headerOptions:       method [] -> "OPTIONS"
+    headerGlobalOptions: method [] -> "GLOBAL OPTIONS"
+    headerCommands:      method [] -> "COMMANDS"
+
+    ;---------------------------
     ; Structural pieces
     ;---------------------------
 
@@ -56,7 +65,7 @@ define :climaxTemplate [
 
     subcommandList: method [subs :block][
         unless empty? subs [
-            print \styleSection "COMMANDS"
+            print \styleSection \headerCommands
             loop subs 'e [
                 name: \styleCommand pad.right e\name \commandColWidth
                 print \indent ++ name ++ e\info
@@ -88,14 +97,14 @@ define :climaxTemplate [
         print [\styleApp data\appName "—" data\appDesc]
         print ""
 
-        print \styleSection "USAGE"
+        print \styleSection \headerUsage
         \usageLine data\appName data
         print ""
 
         unless null? data\defaultOptions ->
-            \optionsSection "OPTIONS" data\defaultOptions
+            \optionsSection \headerOptions data\defaultOptions
 
-        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+        \optionsSection \headerGlobalOptions data\globalOptions
         \subcommandList data\subcommands
 
         unless empty? data\subcommands [
@@ -110,12 +119,12 @@ define :climaxTemplate [
         print [\styleApp label "—" data\info]
         print ""
 
-        print \styleSection "USAGE"
+        print \styleSection \headerUsage
         \usageLine label data
         print ""
 
-        \optionsSection "OPTIONS"        data\options
-        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+        \optionsSection \headerOptions       data\options
+        \optionsSection \headerGlobalOptions data\globalOptions
         \subcommandList data\subcommands
 
         unless empty? data\subcommands [
@@ -131,13 +140,13 @@ define :climaxTemplate [
         print [\styleApp label "—" data\info]
         print ""
 
-        print \styleSection "USAGE"
+        print \styleSection \headerUsage
         styledLabel: \styleApp label
         ind: \indent
         print ~"|ind||styledLabel| [OPTIONS] |sig|"
         print ""
 
-        \optionsSection "OPTIONS"        data\options
-        \optionsSection "GLOBAL OPTIONS" data\globalOptions
+        \optionsSection \headerOptions       data\options
+        \optionsSection \headerGlobalOptions data\globalOptions
     ]
 ]
