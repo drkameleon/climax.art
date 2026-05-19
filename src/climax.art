@@ -68,7 +68,8 @@ define :cli [
         \options:   #[]
         \params:    []
         \rest:      []
-        \valueOpts: (attr 'valueOpts) ?? []
+        \valueOpts:        (attr 'valueOpts) ?? []
+        \predicateAliases: (attr 'predicateAliases) ?? []
 
         tokens: (attr 'using) ?? arg
         if string? tokens -> tokens: split.words tokens
@@ -128,30 +129,51 @@ define :cli [
                 ]
                 any [
                     (and? [prefix? token "-"][token <> "-"])? [
-                        flag: \parseFlag token
-                        val: flag\value
-
-                        ;; bare flag (`--foo`) whose name expects a value:
-                        ;; consume the next token if it isn't another flag,
-                        ;; `--`, or the `-` stdin marker.
-                        if and? [logical? val][val][
-                            if in? flag\name \valueOpts [
-                                if (i + 1) < size tokens [
-                                    next: tokens\[i + 1]
-                                    unless prefix? next "-" [
-                                        val: next
-                                        i: i + 1
-                                    ]
+                        bundled?: false
+                        if all? @[
+                            not? prefix? token "--"
+                            (size token) > 2
+                            not? contains? token "="
+                            not? contains? token ":"
+                        ][
+                            chars: split (slice token 1 dec size token)
+                            allPreds?: every? chars 'c -> in? c \predicateAliases
+                            if allPreds? [
+                                loop chars 'c [
+                                    (foundCommand?)?
+                                        -> \options\[c]: true
+                                        -> \globals\[c]: true
                                 ]
+                                bundled?: true
                             ]
                         ]
 
-                        if and? [string? val][numeric? val] ->
-                            val: to :integer val
+                        unless bundled? [
+                            flag: \parseFlag token
+                            val: flag\value
 
-                        (foundCommand?)?
-                            -> \options\[flag\name]: val
-                            -> \globals\[flag\name]: val
+                            ;; bare flag (`--foo`) whose name expects a value:
+                            ;; consume the next token if it isn't another flag,
+                            ;; `--`, or the `-` stdin marker.
+                            if and? [logical? val][val][
+                                if in? flag\name \valueOpts [
+                                    if (i + 1) < size tokens [
+                                        next: tokens\[i + 1]
+                                        unless prefix? next "-" [
+                                            val: next
+                                            i: i + 1
+                                        ]
+                                    ]
+                                ]
+                            ]
+
+                            if and? [string? val][numeric? val] ->
+                                val: to :integer val
+
+                            (foundCommand?)?
+                                -> \options\[flag\name]: val
+                                -> \globals\[flag\name]: val
+                        ]
                     ][
                         if and? [not? foundCommand?][in? token knownCommands][
                             \command: token
@@ -359,6 +381,25 @@ export module [
             ret: ret ++ \specValues cmd\opts
             unless null? cmd\subs ->
                 ret: ret ++ \collectValueOpts #[] cmd\subs
+        ]
+        return ret
+    ]
+
+    specPredAliases: function [spec :dictionary][
+        ret: []
+        loop spec [k s][!
+            if and? [s\pred?][not? null? s\alias] ->
+                ret: append ret s\alias
+        ]
+        return ret
+    ]
+
+    collectPredAliases: function [globalSpec :dictionary  commands :dictionary][
+        ret: \specPredAliases globalSpec
+        loop commands [name cmd][!
+            ret: ret ++ \specPredAliases cmd\opts
+            unless null? cmd\subs ->
+                ret: ret ++ \collectPredAliases #[] cmd\subs
         ]
         return ret
     ]
@@ -591,8 +632,9 @@ export module [
 
         commands: \harvestCommands decls
 
-        vals: \collectValueOpts globalSpec commands
-        parsed: to :cli .valueOpts: vals @[keys commands]!
+        vals:  \collectValueOpts    globalSpec commands
+        preds: \collectPredAliases  globalSpec commands
+        parsed: to :cli .valueOpts: vals .predicateAliases: preds @[keys commands]!
 
         if parsed\version? [
             print script\version ?? "?"
