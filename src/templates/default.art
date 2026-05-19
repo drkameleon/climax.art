@@ -16,4 +16,5 @@ define :defaultTemplate is :climaxTemplate [
     styleArg:     method [s :string] -> color #magenta s
     styleCommand: method [s :string] -> color.bold #white s
     styleDim:     method [s :string] -> color #gray s
+    styleError:   method [s :string] -> color.bold #red s
 ]

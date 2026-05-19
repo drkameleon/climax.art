@@ -13,6 +13,7 @@ define :climaxTemplate [
     styleArg:     method [s :string] -> s
     styleCommand: method [s :string] -> s
     styleDim:     method [s :string] -> s
+    styleError:   method [s :string] -> s
 
     ;---------------------------
     ; Layout primitives
@@ -145,6 +146,42 @@ define :climaxTemplate [
             tip: \tipText label
             unless empty? tip -> print \styleDim tip
         ]
+    ]
+
+    ;---------------------------
+    ; Error rendering — override style primitives to recolour;
+    ; override these methods to restructure the message.
+    ;---------------------------
+
+    renderUnknownCommand: method [name :string][
+        head: \styleError "climax: unknown command"
+        cmd:  \styleCommand name
+        print [head ~"`|cmd|`"]
+    ]
+
+    renderUnknownSubcommand: method [label :string  name :string][
+        head: \styleError ~"|label|: unknown sub-command"
+        cmd:  \styleCommand name
+        print [head ~"`|cmd|`"]
+    ]
+
+    renderUnknownOption: method [label :string  bad :block][
+        flags: bad | map 'u -> \styleFlag ~"--|u|"
+                   | join.with: " "
+        head: \styleError ~"|label|: unknown option(s):"
+        print [head flags]
+    ]
+
+    renderTooManyArgs: method [label :string  got :integer  max :integer][
+        head: \styleError ~"|label|: too many arguments"
+        print [head ~"(got |got|, expected up to |max|)"]
+    ]
+
+    renderMissingRequired: method [label :string  missing :block][
+        miss: missing | map 'm -> \styleArg ~"<|to :string m|>"
+                      | join.with: " "
+        head: \styleError ~"|label|: missing required argument(s):"
+        print [head miss]
     ]
 
     renderCommand: method [data :dictionary][

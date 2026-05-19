@@ -444,8 +444,8 @@ export module [
                     \dispatchNested cmd\subs\default pathSoFar params parsed nextGlobals
                     return ø
                 ]
-                label: \displayLabel pathSoFar
-                print ~"|label|: unknown sub-command `|nextName|`"
+                tpl: \pickTemplate!
+                tpl\renderUnknownSubcommand (\displayLabel pathSoFar) nextName
                 \renderGroupHelp pathSoFar cmd nextGlobals
                 return ø
             ]
@@ -475,10 +475,8 @@ export module [
         seen: (keys parsed\globals) ++ keys parsed\options
         unknown: select seen 'k -> not? in? k known
         unless empty? unknown [
-            bad: unknown | map 'u -> ~"--|u|"
-                         | join.with: " "
-            label: \displayLabel pathSoFar
-            print ~"|label|: unknown option(s): |bad|"
+            tpl: \pickTemplate!
+            tpl\renderUnknownOption (\displayLabel pathSoFar) unknown
             return ø
         ]
 
@@ -486,10 +484,8 @@ export module [
 
         ;; extra-positional check: more args than declared
         if (size params) > size names [
-            label: \displayLabel pathSoFar
-            got: size params
-            max: size names
-            print ~"|label|: too many arguments (got |got|, expected up to |max|)"
+            tpl: \pickTemplate!
+            tpl\renderTooManyArgs (\displayLabel pathSoFar) (size params) (size names)
             return ø
         ]
 
@@ -502,11 +498,8 @@ export module [
             ]
         ]
         unless empty? missing [
-            miss: missing | map 'm -> ~"<|to :string m|>"
-                          | join.with: " "
-
-            label: \displayLabel pathSoFar
-            print ~"|label|: missing required argument(s): |miss|"
+            tpl: \pickTemplate!
+            tpl\renderMissingRequired (\displayLabel pathSoFar) missing
             return ø
         ]
 
@@ -705,7 +698,8 @@ export module [
             (hasDefault?) ? [
                 \dispatchNested commands\default [] parsed\params parsed globalSpec
             ][
-                print ~"climax: unknown command `|cmdName|`"
+                tpl: \pickTemplate!
+                tpl\renderUnknownCommand cmdName
                 \renderHelp globalSpec commands
             ]
             return ø

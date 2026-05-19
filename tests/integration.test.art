@@ -315,6 +315,19 @@ suite "help templates" [
         assert -> not? contains? out esc
     ]
 
+    test ".template: 'plain error output is ANSI-free" [
+        out: runPlain "hello a b"
+        assert -> contains? out "too many arguments"
+        assert -> not? contains? out esc
+    ]
+
+    test "default template colours error messages" [
+        out: runApp "hello rick! extra"
+        assert -> contains? out "too many arguments"
+        ;; bold red ANSI prefix
+        assert -> contains? out (esc ++ "[1;31m")
+    ]
+
     test ".template: 'plain still renders standard sections" [
         out: runPlain "--help"
         assert -> contains? out "USAGE"
