@@ -34,6 +34,14 @@ define :climaxTemplate [
     headerCommands:      method [] -> "COMMANDS"
 
     ;---------------------------
+    ; Inline strings — override to translate, rephrase, or
+    ; suppress (return "" to drop the line entirely).
+    ;---------------------------
+
+    tipText: method [label :string] ->
+        ~"Run `|label| <command> --help` for command-specific help."
+
+    ;---------------------------
     ; Structural pieces
     ;---------------------------
 
@@ -108,8 +116,8 @@ define :climaxTemplate [
         \subcommandList data\subcommands
 
         unless empty? data\subcommands [
-            tip: ~"Run `|data\appName| <command> --help` for command-specific help."
-            print \styleDim tip
+            tip: \tipText data\appName
+            unless empty? tip -> print \styleDim tip
         ]
     ]
 
@@ -128,8 +136,8 @@ define :climaxTemplate [
         \subcommandList data\subcommands
 
         unless empty? data\subcommands [
-            tip: ~"Run `|label| <command> --help` for command-specific help."
-            print \styleDim tip
+            tip: \tipText label
+            unless empty? tip -> print \styleDim tip
         ]
     ]
 
