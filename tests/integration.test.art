@@ -13,35 +13,34 @@ import {unitt}!
 ; Helpers
 ;---------------------------
 
-artBin:     sys\binary
-fixture:    relative "./partials/app.art"
-flagsOnly:  relative "./partials/flagsonly.art"
-withDef:    relative "./partials/withdefault.art"
-plainApp:   relative "./partials/plain_app.art"
-customApp:  relative "./partials/custom_tpl_app.art"
+fixture:    ./"./partials/app.art"
+flagsOnly:  ./"./partials/flagsonly.art"
+withDef:    ./"./partials/withdefault.art"
+plainApp:   ./"./partials/plain_app.art"
+customApp:  ./"./partials/custom_tpl_app.art"
 
 runApp: function [argLine :string][
-    cmd: ~{|artBin| "|fixture|" |argLine|}
+    cmd: ~{|sys\binary| "|fixture|" |argLine|}
     return strip execute cmd
 ]
 
 runFlagsOnly: function [argLine :string][
-    cmd: ~{|artBin| "|flagsOnly|" |argLine|}
+    cmd: ~{|sys\binary| "|flagsOnly|" |argLine|}
     return strip execute cmd
 ]
 
 runWithDefault: function [argLine :string][
-    cmd: ~{|artBin| "|withDef|" |argLine|}
+    cmd: ~{|sys\binary| "|withDef|" |argLine|}
     return strip execute cmd
 ]
 
 runPlain: function [argLine :string][
-    cmd: ~{|artBin| "|plainApp|" |argLine|}
+    cmd: ~{|sys\binary| "|plainApp|" |argLine|}
     return strip execute cmd
 ]
 
 runCustom: function [argLine :string][
-    cmd: ~{|artBin| "|customApp|" |argLine|}
+    cmd: ~{|sys\binary| "|customApp|" |argLine|}
     return strip execute cmd
 ]
 
