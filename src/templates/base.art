@@ -16,6 +16,15 @@ define :climaxTemplate [
     styleDim:     method [s :string] -> s
 
     ;---------------------------
+    ; Layout primitives — override in a subtype to tighten or
+    ; loosen the spacing.
+    ;---------------------------
+
+    indent:          method [] -> "    "
+    flagColWidth:    method [] -> 28
+    commandColWidth: method [] -> 12
+
+    ;---------------------------
     ; Structural pieces
     ;---------------------------
 
@@ -27,13 +36,13 @@ define :climaxTemplate [
     ]
 
     optionLine: method [entry :dictionary][
-        line: pad.right (\styleFlag entry\flag) 28
+        line: pad.right (\styleFlag entry\flag) \flagColWidth
         line: line ++ entry\info
         unless null? entry\default [
             d: entry\default
             line: line ++ \styleDim ~" (default: |d|)"
         ]
-        print "  " ++ line
+        print \indent ++ line
     ]
 
     optionsSection: method [title :string  entries :block][
@@ -49,8 +58,8 @@ define :climaxTemplate [
         unless empty? subs [
             print \styleSection "COMMANDS"
             loop subs 'e [
-                name: \styleCommand pad.right e\name 12
-                print "  " ++ name ++ e\info
+                name: \styleCommand pad.right e\name \commandColWidth
+                print \indent ++ name ++ e\info
             ]
             print ""
         ]
@@ -61,12 +70,13 @@ define :climaxTemplate [
         hasDefault?: not? null? data\defaultArgs
         styledLabel: \styleApp label
 
+        ind: \indent
         (hasDefault?)? [
             sig: \argSig data\defaultArgs
-            print (hasSubs?)? -> ~"  |styledLabel| [OPTIONS] (<command> [ARGS] | |sig|)"
-                              -> ~"  |styledLabel| [OPTIONS] |sig|"
+            print (hasSubs?)? -> ~"|ind||styledLabel| [OPTIONS] (<command> [ARGS] | |sig|)"
+                              -> ~"|ind||styledLabel| [OPTIONS] |sig|"
         ][
-            print ~"  |styledLabel| [OPTIONS] <command> [ARGS]"
+            print ~"|ind||styledLabel| [OPTIONS] <command> [ARGS]"
         ]
     ]
 
@@ -122,7 +132,9 @@ define :climaxTemplate [
         print ""
 
         print \styleSection "USAGE"
-        print ~"  |\styleApp label| [OPTIONS] |sig|"
+        styledLabel: \styleApp label
+        ind: \indent
+        print ~"|ind||styledLabel| [OPTIONS] |sig|"
         print ""
 
         \optionsSection "OPTIONS"        data\options
