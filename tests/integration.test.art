@@ -340,4 +340,63 @@ suite "help templates" [
     ]
 ]
 
+suite "strict validation" [
+
+    test "unknown long option reports error" [
+        out: runApp "hello --bogus rick"
+        assert -> contains? out "unknown option"
+        assert -> contains? out "--bogus"
+    ]
+
+    test "unknown short alias reports error" [
+        out: runApp "show -z"
+        assert -> contains? out "unknown option"
+        assert -> contains? out "--z"
+    ]
+
+    test "extra positional reports error" [
+        out: runApp "hello rick! extra"
+        assert -> contains? out "too many arguments"
+        assert -> contains? out "got 2"
+    ]
+
+    test "extra positional reports error in nested leaf" [
+        out: runApp "remote add origin https://x toomany"
+        assert -> contains? out "too many arguments"
+        assert -> contains? out "remote add"
+    ]
+
+    test "unknown option in nested leaf reports error with full path" [
+        out: runApp "remote add --bogus origin https://x"
+        assert -> contains? out "unknown option"
+        assert -> contains? out "remote add"
+    ]
+
+    test "ancestor group's persistent flag is recognised at leaf" [
+        out: runApp "remote add --loud origin https://x"
+        assert -> not? contains? out "unknown option"
+        assert -> contains? out "loud=true"
+    ]
+
+    test "--help is never flagged as unknown" [
+        out: runApp "show --help"
+        assert -> not? contains? out "unknown option"
+        assert -> contains? out "--port"
+    ]
+
+    test "--version is never flagged as unknown" [
+        out: runApp "--version"
+        assert -> not? contains? out "unknown option"
+        assert -> out = "0.0.1"
+    ]
+
+    test "tokens after -- escape into rest without triggering validation" [
+        out: runApp "rests x -- --bogus --whatever"
+        assert -> not? contains? out "unknown option"
+        ls: split.lines out
+        assert -> contains? ls\1 "--bogus"
+        assert -> contains? ls\1 "--whatever"
+    ]
+]
+
 unitt\report 'full
