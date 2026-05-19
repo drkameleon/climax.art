@@ -84,11 +84,16 @@ Then:
 $ webforge --help
 $ webforge serve --help
 $ webforge serve mysite --watch -p:9000
+$ webforge serve mysite --watch -p 9000     ;; space-separated value works too
+$ webforge serve mysite --watch -p=9000     ;; so does `=`
 $ webforge -v build mysite
 ```
 
 > [!TIP]
 > Trailing `?` on an option name turns it into a boolean switch. Type defaults to `:logical`, default value to `false`.
+
+> [!NOTE]
+> Accepted flag-value forms: `--name VALUE`, `--name:VALUE`, `--name=VALUE`, and the same with short aliases. Bundled short booleans work too: `-xvf` ≡ `-x -v -f` whenever every char is a registered single-char predicate alias.
 
 #### Nested subcommands
 
