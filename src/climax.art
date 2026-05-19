@@ -404,6 +404,29 @@ export module [
         return ret
     ]
 
+    ;---------------------------
+    ; Strict validation
+    ;---------------------------
+
+    builtinOptions: ["help" "h" "version" "V"]
+
+    specNames: function [spec :dictionary][
+        ret: []
+        loop spec [k s][!
+            ret: append ret s\cli
+            unless null? s\alias ->
+                ret: append ret s\alias
+        ]
+        return ret
+    ]
+
+    knownOptionNames: function [globalSpec :dictionary  cmdOpts :dictionary][
+        ret: \specNames globalSpec
+        ret: ret ++ \specNames cmdOpts
+        ret: ret ++ \builtinOptions
+        return ret
+    ]
+
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
         unless null? cmd\subs [
             nextGlobals: extend globalSpec cmd\opts
@@ -446,12 +469,35 @@ export module [
             return ø
         ]
 
+        ;; unknown-option check: any flag not in the accumulated spec
+        ;; (root globals + ancestor groups + this leaf's opts) is rejected.
+        known: \knownOptionNames globalSpec cmd\opts
+        seen: (keys parsed\globals) ++ keys parsed\options
+        unknown: select seen 'k -> not? in? k known
+        unless empty? unknown [
+            bad: unknown | map 'u -> ~"--|u|"
+                         | join.with: " "
+            label: \displayLabel pathSoFar
+            print ~"|label|: unknown option(s): |bad|"
+            return ø
+        ]
+
         names: \extractArgNames cmd\args
+
+        ;; extra-positional check: more args than declared
+        if (size params) > size names [
+            label: \displayLabel pathSoFar
+            got: size params
+            max: size names
+            print ~"|label|: too many arguments (got |got|, expected up to |max|)"
+            return ø
+        ]
+
         missing: []
         loop.with:'i names 'argName [
             if i >= size params [
                 ts: \argTypes cmd\args argName
-                unless in? :null ts -> 
+                unless in? :null ts ->
                     missing: append missing argName
             ]
         ]
