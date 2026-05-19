@@ -154,10 +154,6 @@ define :cli [
 
 ;---------------------------
 ; Help templates
-;
-; Every bundled template is imported up-front so its `:xxxTemplate`
-; type is registered before climax runs. `pickTemplate` then just
-; instantiates the type named after the chosen template.
 ;---------------------------
 
 import ./"templates/plain"!
@@ -291,33 +287,37 @@ export module [
     ]
 
     mergeSpecs: function [a :dictionary  b :dictionary][
-        ret: #[]
-        loop a [k v] -> ret\[k]: v
-        loop b [k v] -> ret\[k]: v
-        return ret
+        extend a b
     ]
 
     displayLabel: function [pathSoFar :block][
         appName: (script\name) ?? "app"
-        (empty? pathSoFar)? -> appName -> appName ++ " " ++ join.with:" " pathSoFar
+
+        unless empty? pathSoFar -> 
+            'appName ++ " " ++ join.with:" " pathSoFar
+        
+        return appName
     ]
 
     visibleCommands: function [commands :dictionary][
         ret: #[]
         loop commands [name cmd] ->
-            if name <> "default" -> ret\[name]: cmd
+            if name <> "default" -> 
+                ret\[name]: cmd
         return ret
     ]
 
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
-        if not? null? cmd\subs [
+        unless null? cmd\subs [
             nextGlobals: \mergeSpecs globalSpec cmd\opts
 
-            if not? empty? params [
+            unless empty? params [
                 nextName: params\0
                 if in? nextName keys cmd\subs [
-                    childParams: ((size params) > 1)? -> slice params 1 (dec size params) -> []
-                    \dispatchNested cmd\subs\[nextName] (append pathSoFar nextName) childParams parsed nextGlobals
+                    childParams: (1 < size params)? -> slice params 1 (dec size params) 
+                                                    -> []
+
+                    \dispatchNested cmd\subs\[nextName] pathSoFar ++ nextName childParams parsed nextGlobals
                     return ø
                 ]
                 if in? "default" keys cmd\subs [
@@ -354,11 +354,14 @@ export module [
         loop.with:'i names 'argName [
             if i >= size params [
                 ts: \argTypes cmd\args argName
-                unless in? :null ts -> missing: append missing argName
+                unless in? :null ts -> 
+                    missing: append missing argName
             ]
         ]
         unless empty? missing [
-            miss: join.with:" " map missing 'm -> ~"<|to :string m|>"
+            miss: missing | map 'm -> ~"<|to :string m|>"
+                          | join.with: " "
+
             label: \displayLabel pathSoFar
             print ~"|label|: missing required argument(s): |miss|"
             return ø
