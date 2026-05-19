@@ -43,6 +43,8 @@ define :climaxTemplate [
 
     titleSeparator: method [] -> "—"
 
+    defaultLabel: method [val :string] -> ~" (default: |val|)"
+
     ;---------------------------
     ; Structural pieces
     ;---------------------------
@@ -58,8 +60,7 @@ define :climaxTemplate [
         line: pad.right (\styleFlag entry\flag) \flagColWidth
         line: line ++ entry\info
         unless null? entry\default [
-            d: entry\default
-            line: line ++ \styleDim ~" (default: |d|)"
+            line: line ++ \styleDim \defaultLabel entry\default
         ]
         print \indent ++ line
     ]
