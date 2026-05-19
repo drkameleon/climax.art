@@ -106,6 +106,16 @@ suite "climax CLI" [
         assert -> out = "verbose=false port=9000 flag=true"
     ]
 
+    test "space-separated value: long flag" [
+        out: runApp "show --port 9000 --flag"
+        assert -> out = "verbose=false port=9000 flag=true"
+    ]
+
+    test "space-separated value: short alias" [
+        out: runApp "show -p 9000 --flag"
+        assert -> out = "verbose=false port=9000 flag=true"
+    ]
+
     test "global flag merges into command opts" [
         out: runApp "-v show"
         assert -> out = "verbose=true port=8080 flag=false"

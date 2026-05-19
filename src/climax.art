@@ -63,11 +63,12 @@ define :command [
 
 define :cli [
     init: method [knownCommands :block][
-        \globals: #[]
-        \command: ø
-        \options: #[]
-        \params:  []
-        \rest:    []
+        \globals:   #[]
+        \command:   ø
+        \options:   #[]
+        \params:    []
+        \rest:      []
+        \valueOpts: (attr 'valueOpts) ?? []
 
         tokens: (attr 'using) ?? arg
         if string? tokens -> tokens: split.words tokens
@@ -129,7 +130,22 @@ define :cli [
                     (and? [prefix? token "-"][token <> "-"])? [
                         flag: \parseFlag token
                         val: flag\value
-                        
+
+                        ;; bare flag (`--foo`) whose name expects a value:
+                        ;; consume the next token if it isn't another flag,
+                        ;; `--`, or the `-` stdin marker.
+                        if and? [logical? val][val][
+                            if in? flag\name \valueOpts [
+                                if (i + 1) < size tokens [
+                                    next: tokens\[i + 1]
+                                    unless prefix? next "-" [
+                                        val: next
+                                        i: i + 1
+                                    ]
+                                ]
+                            ]
+                        ]
+
                         if and? [string? val][numeric? val] ->
                             val: to :integer val
 
@@ -315,6 +331,36 @@ export module [
         #.raw select commands [name cmd][
             name <> "default"
         ]
+    ]
+
+    ;---------------------------
+    ; Value-expecting option names
+    ;
+    ; Collected up-front and handed to `:cli` so the parser knows
+    ; which bare flags should consume the next token as their
+    ; value (`--port 8080` in addition to `--port:8080`).
+    ;---------------------------
+
+    specValues: function [spec :dictionary][
+        ret: []
+        loop spec [k s][!
+            unless s\pred? [
+                ret: append ret s\cli
+                unless null? s\alias ->
+                    ret: append ret s\alias
+            ]
+        ]
+        return ret
+    ]
+
+    collectValueOpts: function [globalSpec :dictionary  commands :dictionary][
+        ret: \specValues globalSpec
+        loop commands [name cmd][!
+            ret: ret ++ \specValues cmd\opts
+            unless null? cmd\subs ->
+                ret: ret ++ \collectValueOpts #[] cmd\subs
+        ]
+        return ret
     ]
 
     dispatchNested: method [cmd :command  pathSoFar :block  params :block  parsed :cli  globalSpec :dictionary][
@@ -545,7 +591,8 @@ export module [
 
         commands: \harvestCommands decls
 
-        parsed: to :cli @[keys commands]!
+        vals: \collectValueOpts globalSpec commands
+        parsed: to :cli .valueOpts: vals @[keys commands]!
 
         if parsed\version? [
             print script\version ?? "?"

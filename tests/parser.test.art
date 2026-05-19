@@ -12,6 +12,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -22,6 +23,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
 
         assert -> (to :dictionary to :cli .using: "init" @[commands]) = #[
@@ -30,6 +32,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -40,6 +43,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -50,6 +54,7 @@ suite ":cli" [
             options:    #[port: 8080 host: "localhost"]
             params:     ["app.conf"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -60,6 +65,7 @@ suite ":cli" [
             options:    #["dry-run": true port: 3000]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -70,6 +76,7 @@ suite ":cli" [
             options:    #[]
             params:     ["John" "Doe"]
             rest:       []
+            valueOpts:  []
         ]
 
         assert -> (to :dictionary to :cli .using: "init --bare myproject" @[commands]) = #[
@@ -78,6 +85,7 @@ suite ":cli" [
             options:    #[bare: true]
             params:     ["myproject"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -88,6 +96,7 @@ suite ":cli" [
             options:    #[p: 8080 h: "localhost"]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -98,6 +107,7 @@ suite ":cli" [
             options:    #[port: 8080]
             params:     ["app.conf"]
             rest:       ["--raw-thing" "-x" "foo"]
+            valueOpts:  []
         ]
     ]
 
@@ -108,6 +118,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       ["--foo" "--" "--bar"]
+            valueOpts:  []
         ]
     ]
 
@@ -118,6 +129,7 @@ suite ":cli" [
             options:    #[port: 8080]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -128,6 +140,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       ["--foo" "--bar" "baz"]
+            valueOpts:  []
         ]
     ]
 
@@ -138,6 +151,7 @@ suite ":cli" [
             options:    #[]
             params:     ["myproject"]
             rest:       ["--template=basic"]
+            valueOpts:  []
         ]
     ]
 
@@ -148,6 +162,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       ["surplus"]
+            valueOpts:  []
         ]
     ]
 
@@ -158,6 +173,7 @@ suite ":cli" [
             options:    #[port: 8080 debug: true]
             params:     []
             rest:       ["leftover"]
+            valueOpts:  []
         ]
     ]
 
@@ -168,6 +184,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       ["--leftover"]
+            valueOpts:  []
         ]
     ]
 
@@ -178,6 +195,7 @@ suite ":cli" [
             options:    #[port: 8080]
             params:     ["somefile.txt"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -188,6 +206,7 @@ suite ":cli" [
             options:    #[]
             params:     ["unknown-thing" "file1.txt" "file2.txt"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -198,6 +217,7 @@ suite ":cli" [
             options:    #[url: "http://localhost:3000/api"]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -208,6 +228,7 @@ suite ":cli" [
             options:    #[name: "hello"]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -218,6 +239,7 @@ suite ":cli" [
             options:    #[name: "--weird"]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -228,6 +250,7 @@ suite ":cli" [
             options:    #[regex: "^[a-z]+d{3}$"]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -238,6 +261,7 @@ suite ":cli" [
             options:    #[name: "" port: ""]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
 
         assert -> (to :dictionary to :cli .using: "serve --name= file.txt" @[commands]) = #[
@@ -246,6 +270,7 @@ suite ":cli" [
             options:    #[name: ""]
             params:     ["file.txt"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -256,6 +281,7 @@ suite ":cli" [
             options:    #[port: 8080 debug: true]
             params:     ["file1.txt" "file2.txt" "file3.txt"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -266,6 +292,7 @@ suite ":cli" [
             options:    #[port: 9090]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -276,6 +303,7 @@ suite ":cli" [
             options:    #[]
             params:     ["-" "input.txt"]
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -286,6 +314,7 @@ suite ":cli" [
             options:    #[times: 3 "42": true]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -296,6 +325,7 @@ suite ":cli" [
             options:    #[]
             params:     []
             rest:       []
+            valueOpts:  []
         ]
     ]
 
@@ -306,6 +336,73 @@ suite ":cli" [
             options:    #[port: 8080 host: "0.0.0.0" workers: 4 ssl: true]
             params:     ["app.conf" "keys.pem"]
             rest:       ["--extra1" "--extra2" "val"]
+            valueOpts:  []
+        ]
+    ]
+
+    test "space-separated value: long flag" [
+        assert -> (to :dictionary to :cli .using: "serve --port 8080" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: 8080]
+            params:     []
+            rest:       []
+            valueOpts:  ["port"]
+        ]
+    ]
+
+    test "space-separated value: short flag" [
+        assert -> (to :dictionary to :cli .using: "serve -p 9000" .valueOpts: ["port" "p"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[p: 9000]
+            params:     []
+            rest:       []
+            valueOpts:  ["port" "p"]
+        ]
+    ]
+
+    test "space-separated value: string value preserved" [
+        assert -> (to :dictionary to :cli .using: "serve --host localhost app.conf" .valueOpts: ["host"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[host: "localhost"]
+            params:     ["app.conf"]
+            rest:       []
+            valueOpts:  ["host"]
+        ]
+    ]
+
+    test "space-separated: flag not in valueOpts stays boolean" [
+        assert -> (to :dictionary to :cli .using: "serve --dry-run app.conf" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #["dry-run": true]
+            params:     ["app.conf"]
+            rest:       []
+            valueOpts:  ["port"]
+        ]
+    ]
+
+    test "space-separated: don't consume the next flag as a value" [
+        assert -> (to :dictionary to :cli .using: "serve --port --verbose" .valueOpts: ["port" "verbose"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: true verbose: true]
+            params:     []
+            rest:       []
+            valueOpts:  ["port" "verbose"]
+        ]
+    ]
+
+    test "space-separated: trailing bare flag stays boolean" [
+        assert -> (to :dictionary to :cli .using: "serve --port" .valueOpts: ["port"] @[commands]) = #[
+            globals:    #[]
+            command:    "serve"
+            options:    #[port: true]
+            params:     []
+            rest:       []
+            valueOpts:  ["port"]
         ]
     ]
 ]
