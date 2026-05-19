@@ -4,8 +4,7 @@
 
 define :climaxTemplate [
     ;---------------------------
-    ; Style primitives — identity by default; override in a
-    ; subtype to add colour, bold, etc.
+    ; Style primitives
     ;---------------------------
 
     styleApp:     method [s :string] -> s
@@ -16,8 +15,7 @@ define :climaxTemplate [
     styleDim:     method [s :string] -> s
 
     ;---------------------------
-    ; Layout primitives — override in a subtype to tighten or
-    ; loosen the spacing.
+    ; Layout primitives
     ;---------------------------
 
     indent:          method [] -> "    "
@@ -25,7 +23,7 @@ define :climaxTemplate [
     commandColWidth: method [] -> 12
 
     ;---------------------------
-    ; Section titles — override to translate or rename.
+    ; Section titles
     ;---------------------------
 
     headerUsage:         method [] -> "USAGE"
@@ -34,8 +32,7 @@ define :climaxTemplate [
     headerCommands:      method [] -> "COMMANDS"
 
     ;---------------------------
-    ; Inline strings — override to translate, rephrase, or
-    ; suppress (return "" to drop the line entirely).
+    ; Inline strings
     ;---------------------------
 
     tipText: method [label :string] ->
